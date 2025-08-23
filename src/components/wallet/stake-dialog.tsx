@@ -6,10 +6,12 @@ import { X, Plus, Coins, AlertCircle, ChevronDown, RefreshCw } from 'lucide-reac
 import { createPublicClient, createWalletClient, custom, http, formatEther, parseEther, formatUnits, parseUnits } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
+import { stakeOperations, type StakeInsert } from '@/lib/supabase';
 
 interface StakeDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onStakeSuccess?: () => void;
 }
 
 interface Token {
@@ -20,7 +22,7 @@ interface Token {
   logoUrl?: string;
 }
 
-export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
+export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDialogProps) {
   const { user } = usePrivy();
   const { wallets } = useWallets();
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
@@ -303,6 +305,77 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
     return hash;
   };
 
+  // Extract stake ID from transaction receipt
+  const extractStakeIdFromReceipt = (receipt: any): number | null => {
+    try {
+      // Look for the Staked event in the logs
+      const stakedEvent = receipt.logs.find((log: any) => {
+        // Check if this log is from our contract and has the right number of topics
+        return log.address.toLowerCase() === CONTRACT_ADDRESS.toLowerCase() && 
+               log.topics.length >= 4; // Staked event has 4 indexed parameters
+      });
+
+      if (stakedEvent) {
+        // The stake ID is the first indexed parameter (topic[1])
+        // Convert from hex to number
+        const stakeIdHex = stakedEvent.topics[1];
+        const stakeId = parseInt(stakeIdHex, 16);
+        return stakeId;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error extracting stake ID from receipt:', error);
+      return null;
+    }
+  };
+
+  // Save stake data to Supabase
+  const saveStakeToDatabase = async (
+    stakeId: number,
+    transactionHash: string,
+    tokenAddress: string,
+    tokenSymbol: string,
+    amount: string,
+    durationHours: number,
+    latitude: number,
+    longitude: number
+  ) => {
+    try {
+      const wallet = wallets[0];
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + durationHours * 3600 * 1000);
+
+      const stakeData: StakeInsert = {
+        stake_id: stakeId,
+        transaction_hash: transactionHash,
+        staker_address: wallet.address.toLowerCase(),
+        token_address: tokenAddress.toLowerCase(),
+        token_symbol: tokenSymbol,
+        amount: amount,
+        latitude: latitude,
+        longitude: longitude,
+        duration_hours: durationHours,
+        created_at: now.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        network: 'avalanche-fuji',
+        contract_address: CONTRACT_ADDRESS.toLowerCase()
+      };
+
+      const savedStake = await stakeOperations.insertStake(stakeData);
+      if (savedStake) {
+        console.log('Stake saved to database:', savedStake);
+        return savedStake;
+      } else {
+        console.error('Failed to save stake to database');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error saving stake to database:', error);
+      return null;
+    }
+  };
+
   const addCustomToken = async () => {
     if (!customTokenAddress.trim()) return;
 
@@ -486,10 +559,35 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
       const receipt = await publicClient.waitForTransactionReceipt({ hash: stakeHash as `0x${string}` });
       console.log('Stake transaction confirmed!', receipt);
 
+      // Extract stake ID from transaction receipt
+      const stakeId = extractStakeIdFromReceipt(receipt);
+      if (stakeId !== null) {
+        console.log('Extracted stake ID:', stakeId);
+        
+        // Save stake data to Supabase
+        await saveStakeToDatabase(
+          stakeId,
+          stakeHash,
+          tokenAddress,
+          selectedToken.symbol,
+          amount,
+          parseInt(duration),
+          currentLocation.latitude,
+          currentLocation.longitude
+        );
+      } else {
+        console.warn('Could not extract stake ID from transaction receipt');
+      }
+
       setTransactionStatus('success');
       
       // Refresh token balances
       await fetchAvailableTokens();
+      
+      // Notify parent component of successful stake
+      if (onStakeSuccess) {
+        onStakeSuccess();
+      }
       
       // Close dialog after a short delay
       setTimeout(() => {

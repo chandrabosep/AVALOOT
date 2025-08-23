@@ -4,23 +4,30 @@ import mapboxgl from "mapbox-gl";
 import { useRef, useEffect } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { createTokenMarker, createUserMarker } from "@/utlis/markers";
+import { createStakeMarker } from "./stake-marker";
+import type { StakeMarker } from "@/hooks/useStakes";
 
 
 interface MapComponentProps {
   tokens: any[];
-  currentUser: any;     
+  currentUser: any;
+  stakeMarkers?: StakeMarker[];
   onUserClick?: (user: any) => void;
+  onStakeClick?: (stake: StakeMarker) => void;
 }
 
 export default function MapComponent({
   tokens,
   currentUser,
+  stakeMarkers = [],
   onUserClick,
+  onStakeClick,
 }: MapComponentProps) {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const currentUserMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const tokenMarkers = useRef<mapboxgl.Marker[]>([]);
+  const stakeMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) {
@@ -87,6 +94,8 @@ export default function MapComponent({
 
     }
 
+
+
     // Get and watch current user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -139,6 +148,29 @@ export default function MapComponent({
       };
     }
     }, [ tokens, currentUser, onUserClick]);
+
+  // Update stake markers when stakeMarkers prop changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing stake markers
+    stakeMarkersRef.current.forEach(marker => marker.remove());
+    stakeMarkersRef.current = [];
+
+    // Add new stake markers
+    stakeMarkers.forEach((stake) => {
+      const stakeElement = createStakeMarker(stake, onStakeClick);
+      
+      const marker = new mapboxgl.Marker({
+        element: stakeElement,
+        anchor: "center",
+      })
+        .setLngLat([stake.longitude, stake.latitude])
+        .addTo(mapRef.current!);
+
+      stakeMarkersRef.current.push(marker);
+    });
+  }, [stakeMarkers, onStakeClick]);
 
   return (
     <main className="relative w-screen h-screen overflow-hidden">

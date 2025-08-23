@@ -3,6 +3,7 @@ import PlayableMap from "@/components/map/playable-map";
 import Login from "@/components/auth/login";
 import UserProfile from "@/components/auth/user-profile";
 import WalletLogger from "@/components/debug/wallet-logger";
+
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect } from "react";
 
