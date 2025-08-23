@@ -17,6 +17,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
   const [balances, setBalances] = useState<{ [address: string]: string }>({});
   const [loading, setLoading] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Create a public client for fetching balances
   const publicClient = createPublicClient({
@@ -63,25 +64,51 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
   };
 
   const fetchAllBalances = async () => {
-    if (wallets.length === 0) return;
+    if (wallets.length === 0 || isClosing) return;
     
     setLoading(true);
     const newBalances: { [address: string]: string } = {};
     
-    for (const wallet of wallets) {
-      const balance = await fetchBalance(wallet.address, wallet.chainId);
-      newBalances[wallet.address] = balance;
+    try {
+      // Fetch balances in parallel for better performance
+      const balancePromises = wallets.map(async (wallet) => {
+        const balance = await fetchBalance(wallet.address, wallet.chainId);
+        return { address: wallet.address, balance };
+      });
+      
+      const results = await Promise.all(balancePromises);
+      
+      // Only update state if dialog is still open
+      if (!isClosing) {
+        results.forEach(({ address, balance }) => {
+          newBalances[address] = balance;
+        });
+        setBalances(newBalances);
+      }
+    } catch (error) {
+      console.error('Error fetching balances:', error);
+    } finally {
+      if (!isClosing) {
+        setLoading(false);
+      }
     }
-    
-    setBalances(newBalances);
-    setLoading(false);
   };
 
   useEffect(() => {
     if (isOpen && wallets.length > 0) {
+      setIsClosing(false);
       fetchAllBalances();
     }
   }, [isOpen, wallets]);
+
+  // Cleanup when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsClosing(false);
+      setLoading(false);
+      setCopiedAddress(null);
+    }
+  }, [isOpen]);
 
   const copyToClipboard = async (address: string) => {
     try {
@@ -114,11 +141,22 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
     window.open(explorerUrl, '_blank');
   };
 
+  const handleClose = () => {
+    setIsClosing(true);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
@@ -131,7 +169,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 hover:bg-accent rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-muted-foreground" />
@@ -217,8 +255,9 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
                             {balances[wallet.address] || '0.0'} AVAX
                           </span>
                           <button
-                            onClick={fetchAllBalances}
-                            className="text-xs text-primary hover:text-primary/80 underline underline-offset-2"
+                            onClick={() => !loading && fetchAllBalances()}
+                            disabled={loading}
+                            className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Refresh
                           </button>
@@ -247,7 +286,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
         {/* Footer */}
         <div className="border-t border-border p-6">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-4 rounded-xl transition-colors"
           >
             Close

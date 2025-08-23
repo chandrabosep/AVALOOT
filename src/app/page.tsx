@@ -7,32 +7,7 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { ready, authenticated, user } = usePrivy();
-  const { wallets } = useWallets();
-
-  // Console log chain and wallet address whenever they change
-  useEffect(() => {
-    if (ready && authenticated && wallets.length > 0) {
-      console.log("=== MAIN PAGE WALLET INFO ===");
-      wallets.forEach((wallet, index) => {
-        console.log(`Wallet ${index + 1}:`);
-        console.log("  Address:", wallet.address);
-        console.log("  Chain ID:", wallet.chainId);
-        console.log("  Network:", getNetworkName(wallet.chainId));
-      });
-      console.log("=============================");
-    }
-  }, [ready, authenticated, wallets]);
-
-  const getNetworkName = (chainId: string) => {
-    const numericChainId = chainId.includes(':') ? parseInt(chainId.split(':')[1]) : parseInt(chainId);
-    switch (numericChainId) {
-      case 43114: return 'Avalanche C-Chain';
-      case 43113: return 'Avalanche Fuji (Testnet)';
-      case 1: return 'Ethereum Mainnet';
-      default: return `Chain ID: ${chainId}`;
-    }
-  };
+  const { ready, authenticated } = usePrivy();
 
   if (!ready) {
     return (
@@ -52,7 +27,6 @@ export default function Home() {
   return (
     <div className="relative">
       <WalletLogger />
-      {/* <UserProfile /> */}
       <PlayableMap />
     </div>
   );
