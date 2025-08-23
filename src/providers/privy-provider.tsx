@@ -9,8 +9,17 @@ export default function WalletProvider({children}: {children: React.ReactNode}) 
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
       clientId={process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID!}
       config={{
-      defaultChain: avalanche,
-    }}
+        defaultChain: avalanche,
+        embeddedWallets: {
+          createOnLogin: 'users-without-wallets',
+          requireUserPasswordOnCreate: false,
+        },
+        loginMethods: ['email'],
+        appearance: {
+          theme: 'light',
+          accentColor: '#676FFF',
+        },
+      }}
     >
       {children}
     </PrivyProvider>
