@@ -3,8 +3,9 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
 import { X, Plus, Coins, AlertCircle, ChevronDown, RefreshCw } from 'lucide-react';
-import { createPublicClient, http, formatEther, parseEther, formatUnits } from 'viem';
+import { createPublicClient, createWalletClient, custom, http, formatEther, parseEther, formatUnits, parseUnits } from 'viem';
 import { avalanche } from '@/utlis/network-config';
+import { GeoStakeABI } from '@/contracts/abi';
 
 interface StakeDialogProps {
   isOpen: boolean;
@@ -34,12 +35,36 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showAddToken, setShowAddToken] = useState(false);
   const [customTokenAddress, setCustomTokenAddress] = useState('');
+  const [transactionStatus, setTransactionStatus] = useState<'idle' | 'approving' | 'staking' | 'success' | 'error'>('idle');
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
+
+  // Contract configuration - you'll need to deploy and set the actual contract address
+  const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_GEOSTAKE_CONTRACT_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';
 
   // Create a public client for fetching balances
   const publicClient = createPublicClient({
     chain: avalanche,
     transport: http()
   });
+
+  // Helper function to convert coordinates to contract format (scaled by 1e6)
+  const coordinateToContract = (coordinate: number): bigint => {
+    return BigInt(Math.round(coordinate * 1_000_000));
+  };
+
+  // Helper function to get wallet client for transactions
+  const getWalletClient = async () => {
+    const wallet = wallets[0];
+    if (!wallet) throw new Error('No wallet connected');
+    
+    const provider = await wallet.getEthereumProvider();
+    return createWalletClient({
+      account: wallet.address as `0x${string}`,
+      chain: avalanche,
+      transport: custom(provider)
+    });
+  };
 
   // Verified tokens on Avalanche Fuji Testnet
   // For now, we'll primarily use AVAX and add verified testnet tokens as we find them
@@ -219,6 +244,65 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
     }
   };
 
+  // Check ERC20 allowance
+  const checkAllowance = async (tokenAddress: string, walletAddress: string, amount: string): Promise<boolean> => {
+    if (tokenAddress === '0x0000000000000000000000000000000000000000') {
+      return true; // Native AVAX doesn't need approval
+    }
+
+    try {
+      const allowance = await publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: [
+          {
+            constant: true,
+            inputs: [
+              { name: '_owner', type: 'address' },
+              { name: '_spender', type: 'address' }
+            ],
+            name: 'allowance',
+            outputs: [{ name: '', type: 'uint256' }],
+            type: 'function',
+          },
+        ],
+        functionName: 'allowance',
+        args: [walletAddress as `0x${string}`, CONTRACT_ADDRESS],
+      }) as bigint;
+
+      const requiredAmount = parseUnits(amount, 18); // Assume 18 decimals for now
+      return allowance >= requiredAmount;
+    } catch (error) {
+      console.error('Error checking allowance:', error);
+      return false;
+    }
+  };
+
+  // Approve ERC20 token
+  const approveToken = async (tokenAddress: string, amount: string): Promise<string> => {
+    const walletClient = await getWalletClient();
+    const requiredAmount = parseUnits(amount, 18); // Assume 18 decimals for now
+
+    const hash = await walletClient.writeContract({
+      address: tokenAddress as `0x${string}`,
+      abi: [
+        {
+          constant: false,
+          inputs: [
+            { name: '_spender', type: 'address' },
+            { name: '_value', type: 'uint256' }
+          ],
+          name: 'approve',
+          outputs: [{ name: '', type: 'bool' }],
+          type: 'function',
+        },
+      ],
+      functionName: 'approve',
+      args: [CONTRACT_ADDRESS, requiredAmount],
+    });
+
+    return hash;
+  };
+
   const addCustomToken = async () => {
     if (!customTokenAddress.trim()) return;
 
@@ -315,6 +399,9 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
       setLocationError(null);
       setShowAddToken(false);
       setCustomTokenAddress('');
+      setTransactionStatus('idle');
+      setTransactionHash(null);
+      setTransactionError(null);
     }
   }, [isOpen]);
 
@@ -326,26 +413,93 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
   const handleStake = async () => {
     if (!selectedToken || !amount || !currentLocation) return;
     
-    setLoading(true);
+    // Validate contract address is set
+    if (CONTRACT_ADDRESS === '0x0000000000000000000000000000000000000000') {
+      setTransactionError('Contract address not configured. Please set NEXT_PUBLIC_GEOSTAKE_CONTRACT_ADDRESS in your environment variables.');
+      setTransactionStatus('error');
+      return;
+    }
+
+    setTransactionStatus('idle');
+    setTransactionError(null);
+    setTransactionHash(null);
+
     try {
-      // Here you would implement the actual staking logic
-      // For now, just simulate the process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const wallet = wallets[0];
+      const walletClient = await getWalletClient();
       
-      console.log('Staking:', {
-        token: selectedToken.address,
-        amount,
-        duration: parseInt(duration) * 3600, // convert hours to seconds
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude
-      });
+      // Convert parameters for contract call
+      const tokenAddress = selectedToken.address as `0x${string}`;
+      const stakeAmount = parseUnits(amount, 18); // Assume 18 decimals for now
+      const stakeDuration = BigInt(parseInt(duration) * 3600); // Convert hours to seconds
+      const latitude = coordinateToContract(currentLocation.latitude);
+      const longitude = coordinateToContract(currentLocation.longitude);
+
+      // Step 1: Check if token needs approval (only for ERC20 tokens)
+      if (tokenAddress !== '0x0000000000000000000000000000000000000000') {
+        const needsApproval = !(await checkAllowance(tokenAddress, wallet.address, amount));
+        
+        if (needsApproval) {
+          setTransactionStatus('approving');
+          console.log('Approving ERC20 token...');
+          
+          const approvalHash = await approveToken(tokenAddress, amount);
+          setTransactionHash(approvalHash);
+          
+          // Wait for approval transaction to be mined
+          await publicClient.waitForTransactionReceipt({ hash: approvalHash as `0x${string}` });
+          console.log('Token approved!');
+        }
+      } else {
+        console.log('Native AVAX staking - no approval needed');
+      }
+
+      // Step 2: Execute stake transaction
+      setTransactionStatus('staking');
+      console.log('Staking tokens...');
+
+      let stakeHash: string;
+
+      if (tokenAddress === '0x0000000000000000000000000000000000000000') {
+        // Native AVAX staking - send value with the transaction
+        stakeHash = await walletClient.writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: GeoStakeABI,
+          functionName: 'stake',
+          args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+          value: stakeAmount, // Send AVAX value
+        });
+      } else {
+        // ERC20 token staking
+        stakeHash = await walletClient.writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: GeoStakeABI,
+          functionName: 'stake',
+          args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+        });
+      }
+
+      setTransactionHash(stakeHash);
+      console.log('Stake transaction submitted:', stakeHash);
+
+      // Wait for transaction to be mined
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: stakeHash as `0x${string}` });
+      console.log('Stake transaction confirmed!', receipt);
+
+      setTransactionStatus('success');
       
-      // Close dialog after successful stake
-      handleClose();
-    } catch (error) {
+      // Refresh token balances
+      await fetchAvailableTokens();
+      
+      // Close dialog after a short delay
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
+
+    } catch (error: any) {
       console.error('Staking failed:', error);
-    } finally {
-      setLoading(false);
+      setTransactionStatus('error');
+      setTransactionError(error.message || 'Staking transaction failed');
     }
   };
 
@@ -668,16 +822,86 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
 
         {/* Footer */}
         <div className="border-t border-border p-6 space-y-3">
+          {/* Success Message with Stake Info */}
+          {transactionStatus === 'success' && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700 mb-2">
+                <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white">✓</span>
+                </div>
+                <span className="font-medium">Stake Created Successfully!</span>
+              </div>
+              <div className="text-sm text-green-600 space-y-1">
+                <p><strong>Amount:</strong> {amount} {selectedToken?.symbol}</p>
+                <p><strong>Duration:</strong> {duration} hours ({parseInt(duration) >= 24 ? `${(parseInt(duration) / 24).toFixed(1)} days` : `${duration} hours`})</p>
+                <p><strong>Expires:</strong> {new Date(Date.now() + parseInt(duration) * 3600 * 1000).toLocaleString()}</p>
+                <p className="mt-2 font-medium">📋 <strong>Claim Period:</strong></p>
+                <p className="text-xs">• Others can claim this stake until it expires</p>
+                <p className="text-xs">• After expiry, you can refund if unclaimed</p>
+              </div>
+            </div>
+          )}
+
+          {/* Transaction Status */}
+          {(transactionStatus === 'approving' || transactionStatus === 'staking' || transactionStatus === 'error') && (
+            <div className="space-y-2">
+              {transactionStatus === 'approving' && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Approving token spending...
+                </div>
+              )}
+              {transactionStatus === 'staking' && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Submitting stake transaction...
+                </div>
+              )}
+
+              {transactionStatus === 'error' && transactionError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">Transaction Failed</p>
+                  <p className="text-xs text-red-600 mt-1">{transactionError}</p>
+                </div>
+              )}
+              {transactionHash && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Transaction:</span>
+                  <a
+                    href={`https://testnet.snowtrace.io/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-mono break-all"
+                  >
+                    {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
           {wallets.length > 0 && currentLocation && (
             <button
               onClick={handleStake}
-              disabled={loading || !selectedToken || !isValidAmount()}
+              disabled={transactionStatus === 'approving' || transactionStatus === 'staking' || !selectedToken || !isValidAmount()}
               className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {transactionStatus === 'approving' ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  Approving Token...
+                </>
+              ) : transactionStatus === 'staking' ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   Staking...
+                </>
+              ) : transactionStatus === 'success' ? (
+                <>
+                  <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-white">✓</span>
+                  </div>
+                  Success!
                 </>
               ) : (
                 <>
@@ -690,7 +914,7 @@ export default function StakeDialog({ isOpen, onClose }: StakeDialogProps) {
           <button
             onClick={handleClose}
             className="w-full bg-muted hover:bg-muted/80 text-muted-foreground font-medium py-3 px-4 rounded-xl transition-colors"
-            disabled={loading}
+            disabled={transactionStatus === 'approving' || transactionStatus === 'staking'}
           >
             Cancel
           </button>

@@ -58,15 +58,21 @@ contract GeoStake is ReentrancyGuard {
         uint256 duration
     ) 
         external 
+        payable
         nonReentrant 
         validCoordinates(lat, lng) 
     {
-        require(token != address(0), "Invalid token address");
         require(amount > 0, "Invalid amount");
         require(duration >= MIN_DURATION && duration <= MAX_DURATION, "Invalid duration");
         
-        // Transfer tokens from user to contract
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        if (token == address(0)) {
+            // Native token (AVAX) staking
+            require(msg.value == amount, "Sent value must equal amount");
+        } else {
+            // ERC20 token staking
+            require(msg.value == 0, "Do not send native tokens when staking ERC20");
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        }
         
         uint256 stakeId = stakeCount;
         stakes[stakeId] = Stake({
@@ -95,8 +101,14 @@ contract GeoStake is ReentrancyGuard {
         
         s.claimed = true;
         
-        // Transfer tokens to claimer
-        IERC20(s.token).safeTransfer(msg.sender, s.amount);
+        if (s.token == address(0)) {
+            // Native token (AVAX) transfer
+            (bool success, ) = payable(msg.sender).call{value: s.amount}("");
+            require(success, "Native token transfer failed");
+        } else {
+            // ERC20 token transfer
+            IERC20(s.token).safeTransfer(msg.sender, s.amount);
+        }
         
         emit Claimed(stakeId, msg.sender, s.amount);
     }
@@ -113,8 +125,14 @@ contract GeoStake is ReentrancyGuard {
         
         s.claimed = true; // Mark as resolved
         
-        // Refund tokens to original staker
-        IERC20(s.token).safeTransfer(msg.sender, s.amount);
+        if (s.token == address(0)) {
+            // Native token (AVAX) refund
+            (bool success, ) = payable(msg.sender).call{value: s.amount}("");
+            require(success, "Native token refund failed");
+        } else {
+            // ERC20 token refund
+            IERC20(s.token).safeTransfer(msg.sender, s.amount);
+        }
         
         emit Refunded(stakeId, msg.sender, s.amount);
     }
