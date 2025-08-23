@@ -152,11 +152,7 @@ export default function StakeDetailsDialog({
         address: CONTRACT_ADDRESS,
         abi: GeoStakeABI,
         functionName: 'claim',
-        args: [
-          BigInt(stake.stakeId),
-          coordinateToContract(userLocation.latitude),
-          coordinateToContract(userLocation.longitude),
-        ],
+        args: [BigInt(stake.stakeId)],
       });
 
       setClaimStatus('Waiting for transaction confirmation...');

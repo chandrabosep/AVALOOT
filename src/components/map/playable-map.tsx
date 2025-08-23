@@ -83,38 +83,38 @@ export default function PlayableMap() {
       )}
       
       {/* Bottom Navigation */}
-      <div className='absolute bottom-0 left-0 w-full h-18 bg-black/20 backdrop-blur-md border-t border-white/10 z-10 flex items-center justify-around px-4'>
+      <div className='absolute bottom-0 left-0 w-full h-20 bg-black/30 backdrop-blur-xl border-t border-white/20 z-10 flex items-center justify-around px-4 shadow-2xl shadow-black/20'>
         <div 
-          className={`flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity ${
-            activeView === 'map' ? 'text-white' : 'text-gray-700'
+          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl ${
+            activeView === 'map' 
+              ? 'text-red-500/80 bg-red-400/20 shadow-lg shadow-red-500/25 border border-red-500/50' 
+                : 'text-gray-200 hover:text-red-300 hover:bg-red-500/10'
           }`}
           onClick={() => setActiveView('map')}
         >
-          <MapPin className='w-6 h-6 mb-1' />
-          <span className='text-xs'>Map</span>
+          <MapPin className={`w-6 h-6 mb-1 ${activeView === 'map' ? 'drop-shadow-lg' : ''}`} />
         </div>
         <div 
-          className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity text-gray-700'
+          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl text-gray-200 hover:text-red-300 hover:bg-red-500/10 hover:shadow-lg hover:shadow-red-500/20'
           onClick={() => setIsStakeDialogOpen(true)}
         >
           <Plus className='w-6 h-6 mb-1' />
-          <span className='text-xs'>Stake</span>
         </div>
         <div 
-          className={`flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity ${
-            activeView === 'stakes' ? 'text-white' : 'text-gray-700'
+          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl ${
+            activeView === 'stakes' 
+            ? 'text-red-500/80 bg-red-400/20 shadow-lg shadow-red-500/25 border border-red-500/50' 
+            : 'text-gray-200 hover:text-red-300 hover:bg-red-500/10'
           }`}
           onClick={() => setActiveView('stakes')}
         >
-          <List className='w-6 h-6 mb-1' />
-          <span className='text-xs'>Stakes</span>
+          <List className={`w-6 h-6 mb-1 ${activeView === 'stakes' ? 'drop-shadow-lg' : ''}`} />
         </div>
         <div 
-          className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity text-gray-700'
+          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl text-gray-200 hover:text-red-300 hover:bg-red-500/10 hover:shadow-lg hover:shadow-red-500/20'
           onClick={() => setIsFundsDialogOpen(true)}
         >
           <Wallet className='w-6 h-6 mb-1' />
-          <span className='text-xs'>Funds</span>
         </div>
       </div>
       
