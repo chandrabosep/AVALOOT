@@ -16,7 +16,7 @@ export default function PlayableMap() {
         latitude: 0,
         longitude: 0,
         name: "You",
-        avatarUrl: "/game-assets/user.jpg",
+        avatarUrl: "/game-assets/user.webp",
       });
     
     const [isFundsDialogOpen, setIsFundsDialogOpen] = useState(false);
