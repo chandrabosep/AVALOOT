@@ -82,7 +82,9 @@ export default function MapComponent({
         if (onUserClick) {
           userElement.addEventListener("click", () => onUserClick(token));
         }
-      });   
+      });
+      
+
     }
 
     // Get and watch current user location

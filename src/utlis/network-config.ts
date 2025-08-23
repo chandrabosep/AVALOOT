@@ -1,9 +1,9 @@
 import { defineChain } from 'viem';
 
 export const avalanche = defineChain({
-  id: 43114,
-  name: 'Avalanche C-Chain',
-  network: 'avalanche',
+  id: 43113,
+  name: 'Avalanche Fuji Testnet',
+  network: 'avalanche-fuji',
   nativeCurrency: {
     decimals: 18,
     name: 'Avalanche',
@@ -11,10 +11,10 @@ export const avalanche = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://api.avax.network/ext/bc/C/rpc'],
+      http: ['https://api.avax-test.network/ext/bc/C/rpc'],
     },
   },
   blockExplorers: {
-    default: { name: 'SnowTrace', url: 'https://snowtrace.io' },
+    default: { name: 'SnowTrace Testnet', url: 'https://testnet.snowtrace.io' },
   },
 });

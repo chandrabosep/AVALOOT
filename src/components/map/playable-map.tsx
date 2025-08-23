@@ -2,6 +2,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import MapComponent from './map'
 import FundsDialog from '@/components/wallet/funds-dialog'
+import StakeDialog from '@/components/wallet/stake-dialog'
 import { MapPin, Plus, TrendingUp, Wallet } from 'lucide-react';
 
 
@@ -16,6 +17,7 @@ export default function PlayableMap() {
       });
     
     const [isFundsDialogOpen, setIsFundsDialogOpen] = useState(false);
+    const [isStakeDialogOpen, setIsStakeDialogOpen] = useState(false);
     
 
     const tokens = [{
@@ -32,6 +34,8 @@ export default function PlayableMap() {
     const handleUserClick = () => {
         console.log("user clicked")
     }
+    
+
     
 
 
@@ -54,7 +58,10 @@ export default function PlayableMap() {
           <MapPin className='w-6 h-6 text-gray-700 mb-1' />
           <span className='text-xs text-gray-700'>Map</span>
         </div>
-        <div className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity'>
+        <div 
+          className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity'
+          onClick={() => setIsStakeDialogOpen(true)}
+        >
           <Plus className='w-6 h-6 text-gray-700 mb-1' />
           <span className='text-xs text-gray-700'>Stake</span>
         </div>
@@ -70,6 +77,11 @@ export default function PlayableMap() {
       <FundsDialog 
         isOpen={isFundsDialogOpen}
         onClose={() => setIsFundsDialogOpen(false)}
+      />
+      
+      <StakeDialog 
+        isOpen={isStakeDialogOpen}
+        onClose={() => setIsStakeDialogOpen(false)}
       />
     </div>
   )

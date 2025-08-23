@@ -49,8 +49,8 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
     try {
       const numericChainId = chainId.includes(':') ? parseInt(chainId.split(':')[1]) : parseInt(chainId);
       
-      // Only fetch balance for Avalanche C-Chain
-      if (numericChainId === 43114) {
+      // Only fetch balance for Avalanche Fuji Testnet
+      if (numericChainId === 43113) {
         const balance = await publicClient.getBalance({
           address: address as `0x${string}`
         });
