@@ -1,6 +1,7 @@
 "use client"
 import React, { useMemo, useState, useEffect } from 'react'
 import MapComponent from './map'
+import { MapPin, Plus, TrendingUp, Wallet } from 'lucide-react';
 
 
 
@@ -44,12 +45,20 @@ export default function PlayableMap() {
     <div><MapComponent
         {...mapProps}
       />
-    <div className='absolute  top-0 left-0 w-full h-full bg-black/50 z-10'>
-        <div className='map-overlay-content'>
-            <h1>Hello</h1>
-            <p>This is a test overlay</p>
-        </div>
-    </div>
+    <div className='absolute bottom-0 left-0 w-full h-18 bg-black/20 backdrop-blur-md border-t border-white/10 z-10 flex items-center justify-around px-4'>
+      <div className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity'>
+        <MapPin className='w-6 h-6 text-gray-700 mb-1' />
+        <span className='text-xs text-gray-700'>Map</span>
+      </div>
+      <div className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity'>
+        <Plus className='w-6 h-6 text-gray-700 mb-1' />
+        <span className='text-xs text-gray-700'>Stake</span>
+      </div>
+      <div className='flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity'>
+        <Wallet className='w-6 h-6 text-gray-700 mb-1' />
+        <span className='text-xs text-gray-700'>Funds</span>
+      </div>
+      </div>
     </div>
   )
 }

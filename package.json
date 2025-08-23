@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@privy-io/react-auth": "^2.21.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.541.0",
@@ -15,7 +16,8 @@
     "next": "15.5.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "viem": "^2.34.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
