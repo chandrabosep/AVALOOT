@@ -10,6 +10,7 @@ import { useWallets } from '@privy-io/react-auth';
 import { createWalletClient, createPublicClient, custom, http, parseEther } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
+import { stakeOperations } from '@/lib/supabase';
 
 interface StakeDetailsDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function StakeDetailsDialog({
   const [isClaimingLoading, setIsClaimingLoading] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<string>('');
 
   if (!stake) return null;
 
@@ -64,11 +66,14 @@ export default function StakeDetailsDialog({
     try {
       setIsClaimingLoading(true);
       setClaimError(null);
+      setClaimStatus('Getting your location...');
 
       // Create wallet client
+      const ethereumProvider = await wallets[0].getEthereumProvider();
       const walletClient = createWalletClient({
         chain: avalanche,
-        transport: custom(wallets[0].getEthereumProvider()),
+        transport: custom(ethereumProvider),
+        account: wallets[0].address as `0x${string}`,
       });
 
       // Create public client for reading
@@ -105,6 +110,7 @@ export default function StakeDetailsDialog({
       };
 
       const userLocation = await getCurrentLocation();
+      setClaimStatus('Verifying your location...');
 
       // Calculate distance between user and stake
       const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -135,6 +141,9 @@ export default function StakeDetailsDialog({
         throw new Error(`You must be within ${CLAIM_DISTANCE_METERS}m of the stake to claim it. You are ${Math.round(distance)}m away.`);
       }
 
+      console.log(`User is ${Math.round(distance)}m from stake - within claiming range!`);
+      setClaimStatus('Submitting claim transaction...');
+
       // Convert coordinates to contract format (scaled by 1e6)
       const coordinateToContract = (coord: number) => Math.round(coord * 1e6);
 
@@ -150,12 +159,22 @@ export default function StakeDetailsDialog({
         ],
       });
 
+      setClaimStatus('Waiting for transaction confirmation...');
+      
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: claimHash as `0x${string}`,
       });
 
       if (receipt.status === 'success') {
+        // Update database to mark stake as claimed
+        const claimerAddress = wallets[0].address;
+        const dbUpdateSuccess = await stakeOperations.markAsClaimed(stake.stakeId, claimerAddress);
+        
+        if (!dbUpdateSuccess) {
+          console.warn('Failed to update database, but blockchain transaction succeeded');
+        }
+
         setClaimSuccess(true);
         if (onClaimSuccess) {
           onClaimSuccess();
@@ -163,8 +182,7 @@ export default function StakeDetailsDialog({
         
         // Close dialog after showing success
         setTimeout(() => {
-          onClose();
-          setClaimSuccess(false);
+          handleClose();
         }, 3000);
       } else {
         throw new Error('Transaction failed');
@@ -175,11 +193,21 @@ export default function StakeDetailsDialog({
       setClaimError(error.message || 'Failed to claim stake');
     } finally {
       setIsClaimingLoading(false);
+      setClaimStatus('');
     }
   };
 
+  // Reset state when dialog closes
+  const handleClose = () => {
+    setClaimError(null);
+    setClaimSuccess(false);
+    setClaimStatus('');
+    setIsClaimingLoading(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -252,6 +280,15 @@ export default function StakeDetailsDialog({
                     You'll receive the staked tokens as a reward!
                   </p>
                 </div>
+
+                {isClaimingLoading && claimStatus && (
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {claimStatus}
+                    </p>
+                  </div>
+                )}
 
                 {claimError && (
                   <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg">
