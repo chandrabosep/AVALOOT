@@ -126,6 +126,85 @@ export const stakeOperations = {
     }
   },
 
+  // Get all stakes (including claimed and refunded) - useful for showing complete history
+  async getAllStakes(): Promise<StakeRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('stakes')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching all stakes:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Error fetching all stakes:', error)
+      return []
+    }
+  },
+
+  // Get stakes that the user has claimed (where they were the claimer)
+  async getStakesClaimed(claimerAddress: string): Promise<StakeRecord[]> {
+    try {
+      console.log('Fetching claimed stakes for claimer:', claimerAddress);
+      
+      // First, let's check what claimed stakes exist in the database
+      const { data: allClaimedStakes, error: allError } = await supabase
+        .from('stakes')
+        .select('*')
+        .eq('claimed', true)
+
+      console.log('All claimed stakes in database:', allClaimedStakes);
+
+      // Now try different case variations of the address
+      const addressVariations = [
+        claimerAddress,
+        claimerAddress.toLowerCase(),
+        claimerAddress.toUpperCase()
+      ];
+
+      console.log('Trying address variations:', addressVariations);
+
+      for (const addr of addressVariations) {
+        const { data, error } = await supabase
+          .from('stakes')
+          .select('*')
+          .eq('claimed_by', addr)
+          .eq('claimed', true)
+          .order('claimed_at', { ascending: false })
+
+        console.log(`Query result for address ${addr}:`, { data, error, count: data?.length || 0 });
+
+        if (data && data.length > 0) {
+          return data;
+        }
+      }
+
+      // If no exact matches, try using ILIKE for case-insensitive search
+      const { data, error } = await supabase
+        .from('stakes')
+        .select('*')
+        .ilike('claimed_by', claimerAddress)
+        .eq('claimed', true)
+        .order('claimed_at', { ascending: false })
+
+      console.log('ILIKE query result:', { data, error, count: data?.length || 0 });
+
+      if (error) {
+        console.error('Error fetching claimed stakes:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Error fetching claimed stakes:', error)
+      return []
+    }
+  },
+
   // Get stakes in a geographic area
   async getStakesInArea(
     minLat: number,
@@ -165,20 +244,37 @@ export const stakeOperations = {
     stakerReward: string
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      console.log('Marking stake as claimed:', {
+        stakeId,
+        claimerAddress,
+        claimerAmount,
+        stakerReward
+      });
+
+      const { data, error } = await supabase
         .from('stakes')
         .update({
           claimed: true,
-          claimed_by: claimerAddress,
+          claimed_by: claimerAddress.toLowerCase(), // Ensure lowercase for consistency
           claimed_at: new Date().toISOString(),
           claimer_amount: claimerAmount,
           staker_reward: stakerReward
         })
         .eq('stake_id', stakeId)
+        .select()
+
+      console.log('markAsClaimed result:', { data, error });
 
       if (error) {
         console.error('Error marking stake as claimed:', error)
         return false
+      }
+
+      // Verify the update worked
+      if (data && data.length > 0) {
+        console.log('Successfully updated stake:', data[0]);
+      } else {
+        console.warn('No rows were updated - stake might not exist');
       }
 
       return true
@@ -230,6 +326,38 @@ export const stakeOperations = {
       console.error('Error fetching stake by tx hash:', error)
       return null
     }
+  },
+
+  // Debug function to check all stakes with claim status
+  async debugAllStakes(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('stakes')
+        .select('stake_id, staker_address, claimed, claimed_by, claimed_at, claimer_amount, token_symbol, amount')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      console.log('=== DEBUG: Recent Stakes ===');
+      console.log('Total stakes found:', data?.length || 0);
+      
+      if (data) {
+        data.forEach(stake => {
+          console.log(`Stake #${stake.stake_id}:`, {
+            staker: stake.staker_address,
+            claimed: stake.claimed,
+            claimed_by: stake.claimed_by,
+            claimed_at: stake.claimed_at,
+            amount: `${stake.amount} ${stake.token_symbol}`
+          });
+        });
+      }
+
+      if (error) {
+        console.error('Debug query error:', error);
+      }
+    } catch (error) {
+      console.error('Error in debug function:', error);
+    }
   }
 }
 
@@ -238,12 +366,16 @@ export const stakerRewardOperations = {
   // Get staker rewards by address
   async getStakerRewards(stakerAddress: string, network: string = 'avalanche-fuji'): Promise<StakerRewardRecord[]> {
     try {
+      console.log('Querying staker rewards for:', { stakerAddress, network });
+      
       const { data, error } = await supabase
         .from('staker_rewards')
         .select('*')
-        .eq('staker_address', stakerAddress)
+        .ilike('staker_address', stakerAddress) // Use case-insensitive matching
         .eq('network', network)
         .order('updated_at', { ascending: false })
+
+      console.log('Database query result:', { data, error });
 
       if (error) {
         console.error('Error fetching staker rewards:', error)
@@ -268,12 +400,12 @@ export const stakerRewardOperations = {
   ): Promise<boolean> {
     try {
       const { error } = await supabase.rpc('update_staker_reward', {
-        p_staker_address: stakerAddress,
-        p_token_address: tokenAddress,
+        p_staker_address: stakerAddress.toLowerCase(), // Ensure lowercase
+        p_token_address: tokenAddress.toLowerCase(), // Ensure lowercase
         p_token_symbol: tokenSymbol,
         p_reward_amount: rewardAmount,
         p_network: network,
-        p_contract_address: contractAddress
+        p_contract_address: contractAddress.toLowerCase() // Ensure lowercase
       })
 
       if (error) {

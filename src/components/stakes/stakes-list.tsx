@@ -11,7 +11,7 @@ export default function StakesList() {
   const [stakes, setStakes] = useState<StakeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'my-stakes' | 'all-stakes'>('my-stakes');
+  const [activeTab, setActiveTab] = useState<'my-stakes' | 'all-stakes' | 'my-claims'>('my-stakes');
 
   const fetchMyStakes = async () => {
     if (wallets.length === 0) {
@@ -48,11 +48,40 @@ export default function StakesList() {
     }
   };
 
+  const fetchMyClaims = async () => {
+    if (wallets.length === 0) {
+      setStakes([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const wallet = wallets[0];
+      console.log('Fetching claims for wallet:', wallet.address);
+      
+      // Debug: Check all stakes in the database
+      await stakeOperations.debugAllStakes();
+      
+      const claimedStakes = await stakeOperations.getStakesClaimed(wallet.address.toLowerCase());
+      console.log('Retrieved claimed stakes:', claimedStakes);
+      setStakes(claimedStakes);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching claimed stakes:', err);
+      setError('Failed to load your claimed stakes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshStakes = () => {
     if (activeTab === 'my-stakes') {
       fetchMyStakes();
-    } else {
+    } else if (activeTab === 'all-stakes') {
       fetchAllStakes();
+    } else if (activeTab === 'my-claims') {
+      fetchMyClaims();
     }
   };
 
@@ -110,7 +139,7 @@ export default function StakesList() {
     <div className="space-y-4">
       {/* Tab Navigation */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-1 bg-black/50 rounded-lg p-1 border border-gray-700">
+        <div className="flex space-x-1 bg-black/50">
           <button
             onClick={() => setActiveTab('my-stakes')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -122,10 +151,20 @@ export default function StakesList() {
             My Stakes
           </button>
           <button
+            onClick={() => setActiveTab('my-claims')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'my-claims'
+                ? 'bg-green-500/20 text-green-400 border border-green-400/60 shadow-sm'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            My Claims
+          </button>
+          <button
             onClick={() => setActiveTab('all-stakes')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'all-stakes'
-                ? 'bg-red-500/20 text-red-400 border border-red-400/60 shadow-sm'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-400/60 shadow-sm'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -139,7 +178,6 @@ export default function StakesList() {
           className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
         </button>
       </div>
 
@@ -157,11 +195,15 @@ export default function StakesList() {
             <Coins className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-white mb-2">
-            {activeTab === 'my-stakes' ? 'No Stakes Yet' : 'No Active Stakes'}
+            {activeTab === 'my-stakes' ? 'No Stakes Yet' : 
+             activeTab === 'my-claims' ? 'No Claims Yet' : 
+             'No Active Stakes'}
           </h3>
           <p className="text-gray-400">
             {activeTab === 'my-stakes'
               ? 'Create your first stake to get started!'
+              : activeTab === 'my-claims'
+              ? 'You haven\'t claimed any stakes yet. Find stakes on the map to claim!'
               : 'No active stakes available to claim right now.'}
           </p>
         </div>
@@ -191,9 +233,14 @@ export default function StakesList() {
                         Mine
                       </span>
                     )}
+                    {activeTab === 'my-claims' && (
+                      <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+                        Claimed
+                      </span>
+                    )}
                   </div>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    status === 'Claimed' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
+                    status === 'Claimed' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
                     status === 'Refunded' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
                     status === 'Expired' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
                     'bg-green-500/20 text-green-400 border border-green-500/30'
@@ -216,6 +263,23 @@ export default function StakesList() {
                     </p>
                   </div>
                 </div>
+
+                {/* Claim Details (for My Claims tab) */}
+                {activeTab === 'my-claims' && stake.claimed && stake.claimer_amount && (
+                  <div className="flex items-center gap-2 mb-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <div className="p-1.5 bg-green-500/20 rounded-lg border border-green-400/40">
+                      <User className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-400">
+                        Claimed: {stake.claimer_amount} {stake.token_symbol}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {stake.claimed_at ? `On ${new Date(stake.claimed_at).toLocaleDateString()}` : 'Recently claimed'}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Location */}
                 <div className="flex items-center gap-2 mb-3">

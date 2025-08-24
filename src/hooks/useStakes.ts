@@ -140,6 +140,32 @@ export function useStakes() {
     }
   }, [convertToMarkers]);
 
+  // Fetch user's claimed stakes
+  const fetchClaimedStakes = useCallback(async () => {
+    if (!userAddress) {
+      setStakes([]);
+      setStakeMarkers([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const claimedStakes = await stakeOperations.getStakesClaimed(userAddress);
+      setStakes(claimedStakes);
+      
+      const markers = convertToMarkers(claimedStakes);
+      setStakeMarkers(markers);
+      
+    } catch (err: any) {
+      console.error('Error fetching claimed stakes:', err);
+      setError('Failed to load claimed stakes');
+    } finally {
+      setLoading(false);
+    }
+  }, [convertToMarkers, userAddress]);
+
   // Fetch stakes in a specific geographic area
   const fetchStakesInArea = useCallback(async (
     minLat: number,
@@ -208,6 +234,7 @@ export function useStakes() {
     error,
     refreshStakes,
     fetchStakesInArea,
-    fetchActiveStakes
+    fetchActiveStakes,
+    fetchClaimedStakes
   };
 }

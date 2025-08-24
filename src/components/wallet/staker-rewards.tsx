@@ -61,10 +61,15 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
 
     setLoading(true);
     try {
+      const walletAddress = wallets[0].address.toLowerCase(); // Ensure lowercase
+      console.log('Fetching staker rewards for address:', walletAddress);
+      
       const userRewards = await stakerRewardOperations.getStakerRewards(
-        wallets[0].address,
+        walletAddress,
         'avalanche-fuji'
       );
+      
+      console.log('Fetched staker rewards:', userRewards);
       setRewards(userRewards);
 
       // Fetch current staker reward percentage from contract
