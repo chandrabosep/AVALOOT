@@ -618,22 +618,22 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
 
   return (
     <div 
-      className="fixed inset-0 bg-black/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <div 
-        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
+        className="bg-black/90 border border-black/75 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-black/75">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <Plus className="w-5 h-5 text-primary" />
+            <div className="p-2.5 bg-red-500/20 rounded-xl border border-red-400/40">
+              <Plus className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Stake Tokens</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="text-lg font-semibold text-white">Stake Tokens</h2>
+              <p className="text-sm text-gray-400">
                 {locationLoading 
                   ? 'Getting your location...'
                   : currentLocation 
@@ -647,9 +647,9 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
+            className="p-2 hover:bg-black/75 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-muted-foreground" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
@@ -657,39 +657,39 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
         <div className="p-6 space-y-6">
           {wallets.length === 0 ? (
             <div className="text-center py-8">
-              <AlertCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Wallet Connected</h3>
-              <p className="text-muted-foreground">Connect a wallet to start staking tokens.</p>
+              <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">No Wallet Connected</h3>
+              <p className="text-gray-400">Connect a wallet to start staking tokens.</p>
             </div>
           ) : locationError ? (
             <div className="text-center py-8">
-              <AlertCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Location Access Required</h3>
-              <p className="text-muted-foreground mb-4">{locationError}</p>
+              <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">Location Access Required</h3>
+              <p className="text-gray-400 mb-4">{locationError}</p>
               <button
                 onClick={getCurrentLocation}
                 disabled={locationLoading}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
               >
                 {locationLoading ? 'Getting Location...' : 'Try Again'}
               </button>
             </div>
           ) : locationLoading || !currentLocation ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <h3 className="text-lg font-medium text-foreground mb-2">Getting Your Location</h3>
-              <p className="text-muted-foreground">Please allow location access to continue.</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-white mb-2">Getting Your Location</h3>
+              <p className="text-gray-400">Please allow location access to continue.</p>
             </div>
           ) : (
             <>
               {/* Token Selection */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Select Token</label>
+                  <label className="text-sm font-medium text-white">Select Token</label>
                   <button
                     onClick={fetchAvailableTokens}
                     disabled={loading}
-                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Refresh token balances"
                   >
                     <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -699,7 +699,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                 <div className="relative">
                   <button
                     onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-                    className="w-full flex items-center justify-between p-3 border border-border rounded-xl bg-background hover:bg-accent transition-colors"
+                    className="w-full flex items-center justify-between p-3 border border-black/75 rounded-xl bg-black/50 hover:bg-black/70 transition-colors"
                     disabled={loading || availableTokens.length === 0}
                   >
                     {selectedToken ? (
@@ -707,13 +707,13 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                         {selectedToken.logoUrl ? (
                           <img src={selectedToken.logoUrl} alt={selectedToken.symbol} className="w-6 h-6 rounded-full" />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-xs font-bold text-primary">{selectedToken.symbol.charAt(0)}</span>
+                          <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center border border-red-400/40">
+                            <span className="text-xs font-bold text-red-400">{selectedToken.symbol.charAt(0)}</span>
                           </div>
                         )}
                         <div className="flex flex-col items-start">
-                          <span className="text-sm font-medium text-foreground">{selectedToken.symbol}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-sm font-medium text-white">{selectedToken.symbol}</span>
+                          <span className="text-xs text-gray-400">
                             Balance: {parseFloat(selectedToken.balance) > 0.001 
                               ? parseFloat(selectedToken.balance).toFixed(4)
                               : parseFloat(selectedToken.balance) === 0 
@@ -725,17 +725,17 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <Coins className="w-6 h-6 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
+                        <Coins className="w-6 h-6 text-gray-400" />
+                        <span className="text-sm text-gray-400">
                           {loading ? 'Loading tokens...' : 'Select a token'}
                         </span>
                       </div>
                     )}
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
                   </button>
                   
                   {showTokenDropdown && availableTokens.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 border border-border rounded-xl bg-background shadow-lg z-10 max-h-48 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 border border-black/75 rounded-xl bg-black/75 backdrop-blur-sm z-10 max-h-48 overflow-y-auto">
                       {availableTokens.map((token) => {
                         const hasBalance = parseFloat(token.balance) > 0;
                         return (
@@ -748,31 +748,31 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                             disabled={!hasBalance}
                             className={`w-full flex items-center gap-3 p-3 transition-colors text-left ${
                               hasBalance 
-                                ? 'hover:bg-accent' 
-                                : 'opacity-50 cursor-not-allowed bg-muted/20'
+                                ? 'hover:bg-black/50' 
+                                : 'opacity-50 cursor-not-allowed bg-black/25'
                             }`}
                           >
                             <div className="relative">
                               {token.logoUrl ? (
                                 <img src={token.logoUrl} alt={token.symbol} className="w-6 h-6 rounded-full" />
                               ) : (
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <span className="text-xs font-bold text-primary">{token.symbol.charAt(0)}</span>
+                                <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center border border-red-400/40">
+                                  <span className="text-xs font-bold text-red-400">{token.symbol.charAt(0)}</span>
                                 </div>
                               )}
                               {!hasBalance && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-muted-foreground rounded-full flex items-center justify-center">
-                                  <span className="text-[8px] text-background">0</span>
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-black/75 rounded-full flex items-center justify-center">
+                                  <span className="text-[8px] text-white">0</span>
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col flex-1">
                               <div className="flex items-center justify-between">
-                                <span className={`text-sm font-medium ${hasBalance ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                <span className={`text-sm font-medium ${hasBalance ? 'text-white' : 'text-gray-400'}`}>
                                   {token.symbol}
                                 </span>
                                 {hasBalance && (
-                                  <span className="text-xs text-green-600 font-medium">
+                                  <span className="text-xs text-green-400 font-medium">
                                     {parseFloat(token.balance) > 0.001 
                                       ? parseFloat(token.balance).toFixed(4)
                                       : parseFloat(token.balance).toExponential(2)
@@ -781,9 +781,9 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                                 )}
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">{token.name}</span>
+                                <span className="text-xs text-gray-400">{token.name}</span>
                                 {!hasBalance && (
-                                  <span className="text-xs text-muted-foreground">No balance</span>
+                                  <span className="text-xs text-gray-500">No balance</span>
                                 )}
                               </div>
                             </div>
@@ -799,20 +799,20 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                   {!showAddToken ? (
                     <button
                       onClick={() => setShowAddToken(true)}
-                      className="text-xs text-primary hover:text-primary/80 underline underline-offset-2"
+                      className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2"
                     >
                       + Add custom token
                     </button>
                   ) : (
-                    <div className="space-y-2 p-3 border border-border rounded-xl bg-muted/20">
+                    <div className="space-y-2 p-3 border border-black/75 rounded-xl bg-black/50">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-foreground">Token Contract Address</label>
+                        <label className="text-xs font-medium text-white">Token Contract Address</label>
                         <button
                           onClick={() => {
                             setShowAddToken(false);
                             setCustomTokenAddress('');
                           }}
-                          className="text-xs text-muted-foreground hover:text-foreground"
+                          className="text-xs text-gray-400 hover:text-white"
                         >
                           Cancel
                         </button>
@@ -823,18 +823,18 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                           value={customTokenAddress}
                           onChange={(e) => setCustomTokenAddress(e.target.value)}
                           placeholder="0x..."
-                          className="flex-1 px-2 py-1 text-xs border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20"
+                          className="flex-1 px-2 py-1 text-xs border border-black/75 rounded-lg bg-black/50 text-white focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                           disabled={loading}
                         />
                         <button
                           onClick={addCustomToken}
                           disabled={loading || !customTokenAddress.trim()}
-                          className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? 'Adding...' : 'Add'}
                         </button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-400">
                         Enter a valid ERC20 token contract address on Fuji testnet
                       </p>
                     </div>
@@ -845,11 +845,11 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
               {/* Amount Input */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Amount</label>
+                  <label className="text-sm font-medium text-white">Amount</label>
                   {selectedToken && (
                     <button
                       onClick={setMaxAmount}
-                      className="text-xs text-primary hover:text-primary/80 underline underline-offset-2"
+                      className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2"
                     >
                       Max: {selectedToken.balance}
                     </button>
@@ -861,19 +861,19 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.0"
-                    className="w-full p-3 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full p-3 border border-black/75 rounded-xl bg-black/50 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     disabled={loading || !selectedToken}
                     step="0.000001"
                     min="0"
                   />
                   {selectedToken && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <span className="text-sm text-muted-foreground">{selectedToken.symbol}</span>
+                      <span className="text-sm text-gray-400">{selectedToken.symbol}</span>
                     </div>
                   )}
                 </div>
                 {amount && !isValidAmount() && (
-                  <p className="text-xs text-red-500">
+                  <p className="text-xs text-red-400">
                     {parseFloat(amount) > parseFloat(selectedToken?.balance || '0') 
                       ? 'Insufficient balance' 
                       : 'Please enter a valid amount'}
@@ -883,7 +883,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
 
               {/* Duration Selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Stake Duration</label>
+                <label className="text-sm font-medium text-white">Stake Duration</label>
                 <div className="grid grid-cols-3 gap-2">
                   {['1', '24', '168'].map((hours) => (
                     <button
@@ -891,8 +891,8 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                       onClick={() => setDuration(hours)}
                       className={`p-3 text-sm font-medium rounded-xl border transition-colors ${
                         duration === hours
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background text-foreground border-border hover:bg-accent'
+                          ? 'bg-red-500 text-white border-red-500'
+                          : 'bg-black/50 text-gray-300 border-black/75 hover:bg-black/70'
                       }`}
                       disabled={loading}
                     >
@@ -905,13 +905,13 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    className="flex-1 p-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary"
+                    className="flex-1 p-2 text-sm border border-black/75 rounded-lg bg-black/50 text-white focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                     placeholder="Custom hours"
                     min="1"
                     max="8760"
                     disabled={loading}
                   />
-                  <span className="text-xs text-muted-foreground">hours</span>
+                  <span className="text-xs text-gray-400">hours</span>
                 </div>
               </div>
             </>
@@ -919,17 +919,17 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-6 space-y-3">
+        <div className="border-t border-black/75 p-6 space-y-3">
           {/* Success Message with Stake Info */}
           {transactionStatus === 'success' && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-green-700 mb-2">
+            <div className="p-4 bg-green-900/30 border border-green-500/30 rounded-lg">
+              <div className="flex items-center gap-2 text-green-400 mb-2">
                 <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
                   <span className="text-xs text-white">✓</span>
                 </div>
                 <span className="font-medium">Stake Created Successfully!</span>
               </div>
-              <div className="text-sm text-green-600 space-y-1">
+              <div className="text-sm text-green-300 space-y-1">
                 <p><strong>Amount:</strong> {amount} {selectedToken?.symbol}</p>
                 <p><strong>Duration:</strong> {duration} hours ({parseInt(duration) >= 24 ? `${(parseInt(duration) / 24).toFixed(1)} days` : `${duration} hours`})</p>
                 <p><strong>Expires:</strong> {new Date(Date.now() + parseInt(duration) * 3600 * 1000).toLocaleString()}</p>
@@ -944,32 +944,32 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
           {(transactionStatus === 'approving' || transactionStatus === 'staking' || transactionStatus === 'error') && (
             <div className="space-y-2">
               {transactionStatus === 'approving' && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
                   Approving token spending...
                 </div>
               )}
               {transactionStatus === 'staking' && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
                   Submitting stake transaction...
                 </div>
               )}
 
               {transactionStatus === 'error' && transactionError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 font-medium">Transaction Failed</p>
-                  <p className="text-xs text-red-600 mt-1">{transactionError}</p>
+                <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-lg">
+                  <p className="text-sm text-red-400 font-medium">Transaction Failed</p>
+                  <p className="text-xs text-red-300 mt-1">{transactionError}</p>
                 </div>
               )}
               {transactionHash && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>Transaction:</span>
                   <a
                     href={`https://testnet.snowtrace.io/tx/${transactionHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline font-mono break-all"
+                    className="text-red-400 hover:underline font-mono break-all"
                   >
                     {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
                   </a>
@@ -982,7 +982,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
             <button
               onClick={handleStake}
               disabled={transactionStatus === 'approving' || transactionStatus === 'staking' || !selectedToken || !isValidAmount()}
-              className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 disabled:text-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {transactionStatus === 'approving' ? (
                 <>
@@ -1011,7 +1011,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
           )}
           <button
             onClick={handleClose}
-            className="w-full bg-muted hover:bg-muted/80 text-muted-foreground font-medium py-3 px-4 rounded-xl transition-colors"
+            className="w-full bg-red-500/50 hover:bg-red-500/50 disabled:bg-red-500/50 disabled:text-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-colors"
             disabled={transactionStatus === 'approving' || transactionStatus === 'staking'}
           >
             Cancel

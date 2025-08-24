@@ -203,140 +203,154 @@ export default function StakeDetailsDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Coins className="w-5 h-5" />
-            Stake Details
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Stake Info */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">{stake.amount} {stake.symbol}</h3>
-              <p className="text-sm text-muted-foreground">Stake #{stake.stakeId}</p>
-            </div>
-            <Badge variant={stake.canClaim ? "default" : "secondary"}>
-              {stake.canClaim ? "Claimable" : stake.isOwn ? "Your Stake" : "Not Claimable"}
-            </Badge>
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-black/75 border border-gray-700 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <Coins className="w-5 h-5 text-white" />
+            <h2 className="text-lg font-semibold text-white">Stake Details</h2>
           </div>
+          <button
+            onClick={handleClose}
+            className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <ExternalLink className="w-4 h-4 text-gray-400 hover:text-white rotate-45" />
+          </button>
+        </div>
 
-          <Separator />
-
-          {/* Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Staker:</span>
-              <span className="font-mono">{formatAddress(stake.stakerAddress)}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Location:</span>
-              <span>{stake.latitude.toFixed(6)}, {stake.longitude.toFixed(6)}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Time:</span>
-              <span className={stake.status === 'expired' ? 'text-red-500' : 'text-green-500'}>
-                {formatTimeRemaining()}
+        {/* Content */}
+        <div className="p-6 space-y-5 max-h-96 overflow-y-auto scrollbar-thin">
+          {/* Stake Info */}
+          <div className="bg-black/50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{stake.amount} {stake.symbol}</h3>
+                <p className="text-sm text-gray-400">Stake #{stake.stakeId}</p>
+              </div>
+              <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                stake.canClaim 
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                  : stake.isOwn 
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+              }`}>
+                {stake.canClaim ? "Claimable" : stake.isOwn ? "Your Stake" : "Not Claimable"}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-sm">
-              <ExternalLink className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Transaction:</span>
-              <a 
-                href={getExplorerUrl(stake.transactionHash)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline font-mono"
-              >
-                {formatAddress(stake.transactionHash)}
-              </a>
+            {/* Details */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">Staker:</span>
+                <span className="font-mono text-white">{formatAddress(stake.stakerAddress)}</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">Location:</span>
+                <span className="text-white">{stake.latitude.toFixed(6)}, {stake.longitude.toFixed(6)}</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">Time:</span>
+                <span className={stake.status === 'expired' ? 'text-red-400' : 'text-green-400'}>
+                  {formatTimeRemaining()}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <ExternalLink className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400">Transaction:</span>
+                <a 
+                  href={getExplorerUrl(stake.transactionHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 hover:underline font-mono transition-colors"
+                >
+                  {formatAddress(stake.transactionHash)}
+                </a>
+              </div>
             </div>
           </div>
 
           {/* Claim Section */}
           {stake.canClaim && !stake.isOwn && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    🎯 How to Claim This Stake
-                  </h4>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Go to the stake location and click "Claim" when you're within 100 meters. 
-                    You'll receive the staked tokens as a reward!
+            <div className="space-y-3">
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <h4 className="font-medium text-blue-400 mb-2 flex items-center gap-2">
+                  🎯 How to Claim This Stake
+                </h4>
+                <p className="text-sm text-blue-300">
+                  Go to the stake location and click "Claim" when you're within 100 meters. 
+                  You'll receive the staked tokens as a reward!
+                </p>
+              </div>
+
+              {isClaimingLoading && claimStatus && (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                  <p className="text-sm text-blue-300 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {claimStatus}
                   </p>
                 </div>
+              )}
 
-                {isClaimingLoading && claimStatus && (
-                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {claimStatus}
-                    </p>
-                  </div>
+              {claimError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                  <p className="text-sm text-red-300">{claimError}</p>
+                </div>
+              )}
+
+              {claimSuccess && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                  <p className="text-sm text-green-300">
+                    🎉 Stake claimed successfully! Tokens have been transferred to your wallet.
+                  </p>
+                </div>
+              )}
+
+              <button 
+                onClick={handleClaim}
+                disabled={isClaimingLoading || claimSuccess}
+                className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 disabled:from-gray-600 disabled:to-gray-500 disabled:text-gray-300 text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 disabled:shadow-none border-0"
+              >
+                {isClaimingLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Claiming...
+                  </>
+                ) : claimSuccess ? (
+                  'Claimed Successfully!'
+                ) : (
+                  'Claim Stake'
                 )}
-
-                {claimError && (
-                  <div className="bg-red-50 dark:bg-red-950 p-3 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-300">{claimError}</p>
-                  </div>
-                )}
-
-                {claimSuccess && (
-                  <div className="bg-green-50 dark:bg-green-950 p-3 rounded-lg">
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      🎉 Stake claimed successfully! Tokens have been transferred to your wallet.
-                    </p>
-                  </div>
-                )}
-
-                <Button 
-                  onClick={handleClaim}
-                  disabled={isClaimingLoading || claimSuccess}
-                  className="w-full"
-                >
-                  {isClaimingLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Claiming...
-                    </>
-                  ) : claimSuccess ? (
-                    'Claimed Successfully!'
-                  ) : (
-                    'Claim Stake'
-                  )}
-                </Button>
-              </div>
-            </>
+              </button>
+            </div>
           )}
 
           {/* Own Stake Info */}
           {stake.isOwn && (
-            <>
-              <Separator />
-              <div className="bg-gray-50 dark:bg-gray-950 p-3 rounded-lg">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                  📍 Your Stake
-                </h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  This is your stake. Other users can claim it by visiting the location. 
-                  You can refund it after it expires if no one claims it.
-                </p>
-              </div>
-            </>
+            <div className="bg-gray-500/10 border border-gray-500/30 rounded-xl p-4">
+              <h4 className="font-medium text-gray-300 mb-2 flex items-center gap-2">
+                📍 Your Stake
+              </h4>
+              <p className="text-sm text-gray-400">
+                This is your stake. Other users can claim it by visiting the location. 
+                You can refund it after it expires if no one claims it.
+              </p>
+            </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

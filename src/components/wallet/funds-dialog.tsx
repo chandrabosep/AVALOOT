@@ -150,47 +150,47 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/20 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <div 
-        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
+        className="bg-black/90 border border-gray-700 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <Wallet className="w-5 h-5 text-primary" />
+            <div className="p-2.5 bg-red-500/20 rounded-xl border border-red-400/40">
+              <Wallet className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Wallet Funds</h2>
-              <p className="text-sm text-muted-foreground">Account balances and details</p>
+              <h2 className="text-lg font-semibold text-white">Wallet Funds</h2>
+              <p className="text-sm text-gray-400">Account balances and details</p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-muted-foreground" />
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5 max-h-96 overflow-y-auto">
+        <div className="p-6 space-y-5 max-h-96 overflow-y-auto scrollbar-thin">
           {/* User Info */}
           {user && (
-            <div className="bg-muted/50 rounded-xl p-4">
-              <h3 className="text-sm font-medium text-foreground mb-3">Account Information</h3>
+            <div className="bg-black/50 rounded-xl p-4">
+              <h3 className="text-sm font-medium text-white mb-3">Account Information</h3>
               <div className="space-y-2.5">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">User ID</p>
-                  <p className="text-sm font-mono text-foreground">{user.id.slice(0, 20)}...</p>
+                  <p className="text-xs text-gray-400 mb-1">User ID</p>
+                  <p className="text-sm font-mono text-white">{user.id.slice(0, 20)}...</p>
                 </div>
                 {user.email && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Email</p>
-                    <p className="text-sm text-foreground">{user.email.address}</p>
+                    <p className="text-xs text-gray-400 mb-1">Email</p>
+                    <p className="text-sm text-white">{user.email.address}</p>
                   </div>
                 )}
               </div>
@@ -200,64 +200,64 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
           {/* Wallets */}
           {wallets.length > 0 ? (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-foreground">Connected Wallets</h3>
+              <h3 className="text-sm font-medium text-white">Connected Wallets</h3>
               {wallets.map((wallet, index) => (
-                <div key={index} className="border border-border rounded-xl p-4 space-y-3 bg-card">
+                <div key={index} className="border border-gray-700 rounded-xl p-4 space-y-3 bg-black/50">
                   {/* Network Badge */}
                   <div className="flex items-center justify-between">
                     <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getNetworkColor(wallet.chainId)}`}>
                       {getNetworkName(wallet.chainId)}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-gray-400">
                       {wallets.length > 1 ? `Wallet ${index + 1}` : 'Wallet'}
                     </span>
                   </div>
 
                   {/* Address */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Address</p>
+                    <p className="text-xs text-gray-400 mb-1">Address</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-mono text-foreground flex-1 break-all">
+                      <p className="text-sm font-mono text-white flex-1 break-all">
                         {wallet.address}
                       </p>
                       <button
                         onClick={() => copyToClipboard(wallet.address)}
-                        className="p-1.5 hover:bg-accent rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
                         title="Copy address"
                       >
-                        <Copy className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                        <Copy className="w-4 h-4 text-gray-400 hover:text-white" />
                       </button>
                       <button
                         onClick={() => openInExplorer(wallet.address, wallet.chainId)}
-                        className="p-1.5 hover:bg-accent rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-gray-700 rounded-lg transition-colors"
                         title="View in explorer"
                       >
-                        <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                        <ExternalLink className="w-4 h-4 text-gray-400 hover:text-white" />
                       </button>
                     </div>
                     {copiedAddress === wallet.address && (
-                      <p className="text-xs text-green-600 mt-1">Address copied!</p>
+                      <p className="text-xs text-green-400 mt-1">Address copied!</p>
                     )}
                   </div>
 
                   {/* Balance */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">AVAX Balance</p>
+                    <p className="text-xs text-gray-400 mb-1">AVAX Balance</p>
                     <div className="flex items-center gap-2">
                       {loading ? (
                         <div className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                          <span className="text-sm text-muted-foreground">Loading...</span>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          <span className="text-sm text-gray-400">Loading...</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold text-foreground">
+                          <span className="text-lg font-semibold text-white">
                             {balances[wallet.address] || '0.0'} AVAX
                           </span>
                           <button
                             onClick={() => !loading && fetchAllBalances()}
                             disabled={loading}
-                            className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Refresh
                           </button>
@@ -268,26 +268,26 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
 
                   {/* Chain ID */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Chain ID</p>
-                    <p className="text-sm font-mono text-muted-foreground">{wallet.chainId}</p>
+                    <p className="text-xs text-gray-400 mb-1">Chain ID</p>
+                    <p className="text-sm font-mono text-gray-400">{wallet.chainId}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <AlertCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Wallets Connected</h3>
-              <p className="text-muted-foreground">Connect a wallet to view your funds and balances.</p>
+              <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">No Wallets Connected</h3>
+              <p className="text-gray-400">Connect a wallet to view your funds and balances.</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-6">
+        <div className="border-t border-gray-700 p-6">
           <button
             onClick={handleClose}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-4 rounded-xl transition-colors"
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl transition-colors"
           >
             Close
           </button>
