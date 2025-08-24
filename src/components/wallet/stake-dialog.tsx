@@ -288,7 +288,28 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
   // Approve ERC20 token
   const approveToken = async (tokenAddress: string, amount: string): Promise<string> => {
     const walletClient = await getWalletClient();
+    const wallet = wallets[0];
     const requiredAmount = parseUnits(amount, 18); // Assume 18 decimals for now
+
+    // Estimate gas for approval
+    const gasEstimate = await publicClient.estimateContractGas({
+      address: tokenAddress as `0x${string}`,
+      abi: [
+        {
+          constant: false,
+          inputs: [
+            { name: '_spender', type: 'address' },
+            { name: '_value', type: 'uint256' }
+          ],
+          name: 'approve',
+          outputs: [{ name: '', type: 'bool' }],
+          type: 'function',
+        },
+      ],
+      functionName: 'approve',
+      args: [CONTRACT_ADDRESS, requiredAmount],
+      account: wallet.address as `0x${string}`,
+    });
 
     const hash = await walletClient.writeContract({
       address: tokenAddress as `0x${string}`,
@@ -306,6 +327,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
       ],
       functionName: 'approve',
       args: [CONTRACT_ADDRESS, requiredAmount],
+      gas: gasEstimate + BigInt(5000), // Add buffer for safety
     });
 
     return hash;
@@ -541,21 +563,67 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
 
       if (tokenAddress === '0x0000000000000000000000000000000000000000') {
         // Native AVAX staking - send value with the transaction
-        stakeHash = await walletClient.writeContract({
-          address: CONTRACT_ADDRESS,
-          abi: GeoStakeABI,
-          functionName: 'stake',
-          args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
-          value: stakeAmount, // Send AVAX value
-        });
+        try {
+          // First estimate gas
+          const gasEstimate = await publicClient.estimateContractGas({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            value: stakeAmount,
+            account: wallet.address as `0x${string}`,
+          });
+
+          stakeHash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            value: stakeAmount, // Send AVAX value
+            gas: gasEstimate + BigInt(10000), // Add buffer for safety
+          });
+        } catch (gasError) {
+          console.warn('Gas estimation failed, using fallback gas limit:', gasError);
+          // Fallback to a reasonable gas limit for AVAX staking
+          stakeHash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            value: stakeAmount, // Send AVAX value
+            gas: BigInt(200000), // Fallback gas limit
+          });
+        }
       } else {
         // ERC20 token staking
-        stakeHash = await walletClient.writeContract({
-          address: CONTRACT_ADDRESS,
-          abi: GeoStakeABI,
-          functionName: 'stake',
-          args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
-        });
+        try {
+          // First estimate gas
+          const gasEstimate = await publicClient.estimateContractGas({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            account: wallet.address as `0x${string}`,
+          });
+
+          stakeHash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            gas: gasEstimate + BigInt(10000), // Add buffer for safety
+          });
+        } catch (gasError) {
+          console.warn('Gas estimation failed, using fallback gas limit:', gasError);
+          // Fallback to a reasonable gas limit for ERC20 staking
+          stakeHash = await walletClient.writeContract({
+            address: CONTRACT_ADDRESS,
+            abi: GeoStakeABI,
+            functionName: 'stake',
+            args: [tokenAddress, stakeAmount, latitude, longitude, stakeDuration],
+            gas: BigInt(250000), // Fallback gas limit
+          });
+        }
       }
 
       setTransactionHash(stakeHash);

@@ -147,12 +147,22 @@ export default function StakeDetailsDialog({
       // Convert coordinates to contract format (scaled by 1e6)
       const coordinateToContract = (coord: number) => Math.round(coord * 1e6);
 
+      // Estimate gas for claim function
+      const gasEstimate = await publicClient.estimateContractGas({
+        address: CONTRACT_ADDRESS,
+        abi: GeoStakeABI,
+        functionName: 'claim',
+        args: [BigInt(stake.stakeId)],
+        account: wallets[0].address as `0x${string}`,
+      });
+
       // Call the claim function
       const claimHash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: GeoStakeABI,
         functionName: 'claim',
         args: [BigInt(stake.stakeId)],
+        gas: gasEstimate + BigInt(10000), // Add buffer for safety
       });
 
       setClaimStatus('Waiting for transaction confirmation...');

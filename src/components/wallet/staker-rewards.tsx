@@ -90,12 +90,22 @@ export default function StakerRewards({ className }: StakerRewardsProps) {
 
     setWithdrawing(tokenAddress);
     try {
+      // Estimate gas for withdraw function
+      const gasEstimate = await publicClient.estimateContractGas({
+        address: CONTRACT_ADDRESS,
+        abi: GeoStakeABI,
+        functionName: 'withdrawRewards',
+        args: [tokenAddress as `0x${string}`],
+        account: wallets[0].address as `0x${string}`,
+      });
+
       // Call contract withdraw function
       const withdrawHash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: GeoStakeABI,
         functionName: 'withdrawRewards',
         args: [tokenAddress as `0x${string}`],
+        gas: gasEstimate + BigInt(5000), // Add buffer for safety
       });
 
       console.log('Withdrawal transaction submitted:', withdrawHash);
