@@ -46,6 +46,8 @@ export default function MapComponent({
         attributionControl: false,
         projection: "globe",
         logoPosition: "top-left",
+        // style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/mapbox/standard",
       });
 
       const currentUserElement = createUserMarker(currentUser);
