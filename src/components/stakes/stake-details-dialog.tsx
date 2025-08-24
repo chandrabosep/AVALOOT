@@ -220,6 +220,14 @@ export default function StakeDetailsDialog({
 
         // Update database to mark stake as claimed with amounts
         const claimerAddress = wallets[0].address;
+        console.log('Updating database with claim data:', {
+          stakeId: stake.stakeId,
+          claimerAddress,
+          claimerAmount,
+          stakerReward,
+          stakerAddress: stake.stakerAddress
+        });
+        
         const dbUpdateSuccess = await stakeOperations.markAsClaimed(
           stake.stakeId, 
           claimerAddress, 
@@ -229,11 +237,20 @@ export default function StakeDetailsDialog({
         
         if (!dbUpdateSuccess) {
           console.warn('Failed to update database, but blockchain transaction succeeded');
+        } else {
+          console.log('Successfully updated stake as claimed in database');
         }
 
         // Update staker rewards in the database
         if (stakerReward !== '0') {
-          await stakerRewardOperations.updateStakerReward(
+          console.log('Updating staker rewards:', {
+            stakerAddress: stake.stakerAddress,
+            tokenAddress: stake.tokenAddress,
+            symbol: stake.symbol,
+            rewardAmount: stakerReward
+          });
+          
+          const rewardUpdateSuccess = await stakerRewardOperations.updateStakerReward(
             stake.stakerAddress,
             stake.tokenAddress,
             stake.symbol,
@@ -241,6 +258,12 @@ export default function StakeDetailsDialog({
             'avalanche-fuji', // or get from config
             CONTRACT_ADDRESS
           );
+          
+          if (!rewardUpdateSuccess) {
+            console.warn('Failed to update staker rewards in database');
+          } else {
+            console.log('Successfully updated staker rewards in database');
+          }
         }
 
         setClaimSuccess(true);

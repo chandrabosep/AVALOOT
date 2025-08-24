@@ -29,6 +29,16 @@ export default function PlayableMap() {
     // Fetch stakes data
     const { stakeMarkers, loading: stakesLoading, refreshStakes } = useStakes();
     
+    // Filter stakes for map display - only show active stakes on the map
+    const activeStakeMarkers = useMemo(() => {
+      return stakeMarkers.filter(stake => stake.status === 'active');
+    }, [stakeMarkers]);
+    
+    // Combined refresh function for stakes and rewards
+    const refreshAll = () => {
+      refreshStakes();
+    };
+    
 
     const tokens = [{
         id: "1",
@@ -59,11 +69,11 @@ export default function PlayableMap() {
         () => ({
           tokens,
           currentUser,
-          stakeMarkers,
+          stakeMarkers: activeStakeMarkers,
           onUserClick: handleUserClick,
           onStakeClick: handleStakeClick,
         }),
-        [tokens, currentUser, stakeMarkers, handleUserClick, handleStakeClick]
+        [tokens, currentUser, activeStakeMarkers, handleUserClick, handleStakeClick]
       );
     
   return (
@@ -84,7 +94,7 @@ export default function PlayableMap() {
       ) : activeView === 'rewards' ? (
         <div className="h-full bg-black/90 p-4 pb-20 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            <StakerRewards />
+            <StakerRewards onRefresh={refreshAll} />
           </div>
         </div>
       ) : null}
@@ -143,7 +153,7 @@ export default function PlayableMap() {
       <StakeDialog 
         isOpen={isStakeDialogOpen}
         onClose={() => setIsStakeDialogOpen(false)}
-        onStakeSuccess={refreshStakes}
+        onStakeSuccess={refreshAll}
       />
 
       <StakeDetailsDialog
@@ -153,7 +163,7 @@ export default function PlayableMap() {
           setSelectedStake(null);
         }}
         stake={selectedStake}
-        onClaimSuccess={refreshStakes}
+        onClaimSuccess={refreshAll}
       />
     </div>
   )

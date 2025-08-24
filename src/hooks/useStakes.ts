@@ -90,7 +90,8 @@ export function useStakes() {
           createdAt: stake.created_at
         };
       })
-      .filter(stake => stake.status === 'active'); // Only show active stakes
+      // Show all stakes, but you can filter in the UI components as needed
+      // .filter(stake => stake.status === 'active'); // Only show active stakes
   }, [userAddress]);
 
   // Background fetch that doesn't trigger loading states

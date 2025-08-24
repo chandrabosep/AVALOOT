@@ -12,9 +12,10 @@ const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string
 
 interface StakerRewardsProps {
   className?: string;
+  onRefresh?: () => void; // Callback to trigger refresh from parent
 }
 
-export default function StakerRewards({ className }: StakerRewardsProps) {
+export default function StakerRewards({ className, onRefresh }: StakerRewardsProps) {
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
   const [rewards, setRewards] = useState<StakerRewardRecord[]>([]);
@@ -140,6 +141,14 @@ export default function StakerRewards({ className }: StakerRewardsProps) {
     }
   };
 
+  // Refresh rewards and call parent callback
+  const handleRefresh = () => {
+    fetchRewards();
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
   useEffect(() => {
     if (authenticated && wallets && wallets.length > 0) {
       fetchRewards();
@@ -193,7 +202,7 @@ export default function StakerRewards({ className }: StakerRewardsProps) {
             </div>
           </div>
           <button
-            onClick={fetchRewards}
+            onClick={handleRefresh}
             disabled={loading}
             className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
             title="Refresh rewards"
