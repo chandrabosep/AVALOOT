@@ -66,12 +66,12 @@ export default function PlayableMap() {
       );
     
   return (
-    <div className="relative">
+    <div className="relative h-screen overflow-hidden">
       {/* Main Content */}
       {activeView === 'map' ? (
         <MapComponent {...mapProps} />
       ) : (
-        <div className="min-h-screen bg-black/90 p-4 pb-20">
+        <div className="h-full bg-black/90 p-4 pb-20 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-white mb-2">Stakes</h1>
@@ -83,7 +83,7 @@ export default function PlayableMap() {
       )}
       
       {/* Bottom Navigation */}
-      <div className='absolute bottom-0 left-0 w-full h-20 bg-black/90 backdrop-blur-lg border-t border-gray-700 z-10 flex items-center justify-around px-4 shadow-2xl shadow-black/40'>
+      <div className='fixed bottom-0 left-0 w-full h-20 bg-black/90 backdrop-blur-lg border-t border-gray-700 z-10 flex items-center justify-around px-4 shadow-2xl shadow-black/40'>
         <div 
           className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2.5 rounded-2xl ${
             activeView === 'map' 

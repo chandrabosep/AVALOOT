@@ -30,6 +30,29 @@ export function useStakes() {
 
   const userAddress = wallets.length > 0 ? wallets[0].address.toLowerCase() : null;
 
+  // Helper function to compare stakes arrays for changes
+  const stakesHaveChanged = useCallback((newStakes: StakeRecord[], currentStakes: StakeRecord[]): boolean => {
+    if (newStakes.length !== currentStakes.length) return true;
+    
+    // Create a simple comparison based on stake IDs and key properties
+    const newStakesMap = new Map(newStakes.map(stake => [
+      stake.stake_id, 
+      `${stake.claimed}-${stake.refunded}-${stake.expires_at}`
+    ]));
+    
+    const currentStakesMap = new Map(currentStakes.map(stake => [
+      stake.stake_id, 
+      `${stake.claimed}-${stake.refunded}-${stake.expires_at}`
+    ]));
+    
+    // Check if any stakes are different
+    for (const [id, signature] of newStakesMap) {
+      if (currentStakesMap.get(id) !== signature) return true;
+    }
+    
+    return false;
+  }, []);
+
   // Convert stake records to map markers (only active stakes)
   const convertToMarkers = useCallback((stakeRecords: StakeRecord[]): StakeMarker[] => {
     const now = new Date();
@@ -70,7 +93,33 @@ export function useStakes() {
       .filter(stake => stake.status === 'active'); // Only show active stakes
   }, [userAddress]);
 
-  // Fetch all active stakes
+  // Background fetch that doesn't trigger loading states
+  const fetchActiveStakesBackground = useCallback(async () => {
+    try {
+      const activeStakes = await stakeOperations.getActiveStakes();
+      
+      // Only update if there are actual changes
+      if (stakesHaveChanged(activeStakes, stakes)) {
+        setStakes(activeStakes);
+        const markers = convertToMarkers(activeStakes);
+        setStakeMarkers(markers);
+      }
+      
+      // Clear any existing errors on successful fetch
+      if (error) {
+        setError(null);
+      }
+      
+    } catch (err: any) {
+      console.error('Error fetching stakes in background:', err);
+      // Only set error if we don't have existing data
+      if (stakes.length === 0) {
+        setError('Failed to load stakes');
+      }
+    }
+  }, [convertToMarkers, stakes, stakesHaveChanged, error]);
+
+  // Fetch all active stakes (with loading state for initial load)
   const fetchActiveStakes = useCallback(async () => {
     try {
       setLoading(true);
@@ -125,18 +174,31 @@ export function useStakes() {
     fetchActiveStakes();
   }, [fetchActiveStakes]);
 
-  // Auto-refresh every 30 seconds to update status
+  // Update local stake status every 10 seconds (for expired stakes)
   useEffect(() => {
-    const interval = setInterval(() => {
+    const updateLocalStatus = () => {
       if (stakes.length > 0) {
-        // Update markers status without refetching from database
         const updatedMarkers = convertToMarkers(stakes);
-        setStakeMarkers(updatedMarkers);
+        // Only update if markers actually changed
+        if (JSON.stringify(updatedMarkers) !== JSON.stringify(stakeMarkers)) {
+          setStakeMarkers(updatedMarkers);
+        }
       }
-    }, 30000); // 30 seconds
+    };
 
-    return () => clearInterval(interval);
-  }, [stakes, convertToMarkers]);
+    const statusInterval = setInterval(updateLocalStatus, 10000); // 10 seconds
+    return () => clearInterval(statusInterval);
+  }, [stakes, stakeMarkers, convertToMarkers]);
+
+  // Background fetch every 30 seconds for new/updated stakes from database
+  useEffect(() => {
+    const fetchInterval = setInterval(() => {
+      // Use background fetch to avoid loading states and unnecessary updates
+      fetchActiveStakesBackground();
+    }, 10000); // 30 seconds - less frequent for actual database calls
+
+    return () => clearInterval(fetchInterval);
+  }, [fetchActiveStakesBackground]);
 
   return {
     stakes,
