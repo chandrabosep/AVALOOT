@@ -295,7 +295,7 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
                         <div>
                           <h4 className="font-medium text-white text-sm">{reward.token_symbol}</h4>
                           <p className="text-xs text-gray-400 font-mono">
-                            {reward.token_address.slice(0, 6)}...{reward.token_address.slice(-4)}
+                            0x1bbc...CB8Db
                           </p>
                         </div>
                       </div>
