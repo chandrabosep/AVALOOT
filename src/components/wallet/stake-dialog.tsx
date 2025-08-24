@@ -7,6 +7,12 @@ import { createPublicClient, createWalletClient, custom, http, formatEther, pars
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
 import { stakeOperations, type StakeInsert } from '@/lib/supabase';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface StakeDialogProps {
   isOpen: boolean;
@@ -614,25 +620,16 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={handleClose}
-    >
-      <div 
-        className="bg-black/90 border border-black/75 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-black/75">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-black/90 border border-black/75 text-white max-w-md max-h-[90vh] overflow-hidden">
+        <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-red-500/20 rounded-xl border border-red-400/40">
               <Plus className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Stake Tokens</h2>
+              <DialogTitle className="text-lg font-semibold text-white">Stake Tokens</DialogTitle>
               <p className="text-sm text-gray-400">
                 {locationLoading 
                   ? 'Getting your location...'
@@ -645,16 +642,10 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-black/75 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
           {wallets.length === 0 ? (
             <div className="text-center py-8">
               <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
@@ -919,7 +910,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
         </div>
 
         {/* Footer */}
-        <div className="border-t border-black/75 p-6 space-y-3">
+        <div className="border-t border-black/75 pt-6 space-y-3">
           {/* Success Message with Stake Info */}
           {transactionStatus === 'success' && (
             <div className="p-4 bg-green-900/30 border border-green-500/30 rounded-lg">
@@ -1017,7 +1008,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
             Cancel
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

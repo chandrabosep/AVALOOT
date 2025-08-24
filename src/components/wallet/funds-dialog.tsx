@@ -5,6 +5,12 @@ import { useEffect, useState } from 'react';
 import { X, Copy, ExternalLink, Wallet, AlertCircle } from 'lucide-react';
 import { createPublicClient, http, formatEther } from 'viem';
 import { avalanche } from '@/utlis/network-config';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface FundsDialogProps {
   isOpen: boolean;
@@ -146,38 +152,23 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={handleClose}
-    >
-      <div 
-        className="bg-black/90 border border-gray-700 rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-black/90 border border-gray-700 text-white max-w-md max-h-[90vh] overflow-hidden">
+        <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-red-500/20 rounded-xl border border-red-400/40">
               <Wallet className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Wallet Funds</h2>
+              <DialogTitle className="text-lg font-semibold text-white">Wallet Funds</DialogTitle>
               <p className="text-sm text-gray-400">Account balances and details</p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="p-6 space-y-5 max-h-96 overflow-y-auto scrollbar-thin">
+        <div className="space-y-5 max-h-96 overflow-y-auto scrollbar-thin">
           {/* User Info */}
           {user && (
             <div className="bg-black/50 rounded-xl p-4">
@@ -284,7 +275,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-700 p-6">
+        <div className="border-t border-gray-700 pt-6">
           <button
             onClick={handleClose}
             className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl transition-colors"
@@ -292,7 +283,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
             Close
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
