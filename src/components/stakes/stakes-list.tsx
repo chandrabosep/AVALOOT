@@ -5,6 +5,7 @@ import { useWallets } from '@privy-io/react-auth';
 import { stakeOperations, type StakeRecord } from '@/lib/supabase';
 import { Clock, MapPin, Coins, User, ExternalLink, RefreshCw } from 'lucide-react';
 import { formatTokenAmount, calculateStakeTimingInfo, formatCoordinate } from '@/utlis/stake-utils';
+import { formatUnits } from 'viem';
 
 export default function StakesList() {
   const { wallets } = useWallets();
@@ -12,6 +13,17 @@ export default function StakesList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'my-stakes' | 'all-stakes' | 'my-claims'>('my-stakes');
+
+  // Helper function to convert wei string to decimal number for display
+  const weiToDecimal = (weiString: string, decimals: number = 18): number => {
+    try {
+      if (!weiString || weiString === '0') return 0;
+      return parseFloat(formatUnits(BigInt(weiString), decimals));
+    } catch (error) {
+      console.error('Error converting wei to decimal:', weiString, error);
+      return 0;
+    }
+  };
 
   const fetchMyStakes = async () => {
     if (wallets.length === 0) {
@@ -272,7 +284,7 @@ export default function StakesList() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-green-400">
-                        Claimed: {stake.claimer_amount} {stake.token_symbol}
+                        Claimed: {weiToDecimal(stake.claimer_amount).toFixed(6)} {stake.token_symbol}
                       </p>
                       <p className="text-xs text-gray-400">
                         {stake.claimed_at ? `On ${new Date(stake.claimed_at).toLocaleDateString()}` : 'Recently claimed'}

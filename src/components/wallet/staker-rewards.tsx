@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { createWalletClient, createPublicClient, custom, http } from 'viem';
+import { createWalletClient, createPublicClient, custom, http, formatUnits, parseUnits } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
 import { stakerRewardOperations, StakerRewardRecord } from '@/lib/supabase';
@@ -22,6 +22,17 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
   const [loading, setLoading] = useState(false);
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
   const [stakerRewardPercentage, setStakerRewardPercentage] = useState<number>(5);
+
+  // Helper function to convert wei string to decimal number
+  const weiToDecimal = (weiString: string, decimals: number = 18): number => {
+    try {
+      if (!weiString || weiString === '0') return 0;
+      return parseFloat(formatUnits(BigInt(weiString), decimals));
+    } catch (error) {
+      console.error('Error converting wei to decimal:', weiString, error);
+      return 0;
+    }
+  };
 
   // Create wallet and public clients
   const [walletClient, setWalletClient] = useState<any>(null);
@@ -91,7 +102,7 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
   };
 
   // Withdraw rewards for a specific token
-  const withdrawRewards = async (tokenAddress: string, tokenSymbol: string, availableBalance: string) => {
+  const withdrawRewards = async (tokenAddress: string, tokenSymbol: string, availableBalanceWei: string) => {
     if (!walletClient || !wallets || wallets.length === 0 || !wallets[0]) return;
 
     setWithdrawing(tokenAddress);
@@ -126,7 +137,7 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
         await stakerRewardOperations.recordRewardWithdrawal(
           wallets[0].address,
           tokenAddress,
-          availableBalance,
+          availableBalanceWei,
           'avalanche-fuji',
           CONTRACT_ADDRESS
         );
@@ -183,11 +194,11 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
   const totalEarningsUSD = rewards.reduce((sum, reward) => {
     // For demo purposes, assuming 1:1 USD conversion
     // In production, you'd fetch real exchange rates
-    return sum + parseFloat(reward.total_earned || '0');
+    return sum + weiToDecimal(reward.total_earned || '0');
   }, 0);
 
   const totalAvailableUSD = rewards.reduce((sum, reward) => {
-    return sum + parseFloat(reward.available_balance || '0');
+    return sum + weiToDecimal(reward.available_balance || '0');
   }, 0);
 
   return (
@@ -265,9 +276,9 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
           ) : (
             <div className="space-y-3">
               {rewards.map((reward) => {
-                const availableBalance = parseFloat(reward.available_balance || '0');
-                const totalEarned = parseFloat(reward.total_earned || '0');
-                const totalWithdrawn = parseFloat(reward.total_withdrawn || '0');
+                const availableBalance = weiToDecimal(reward.available_balance || '0');
+                const totalEarned = weiToDecimal(reward.total_earned || '0');
+                const totalWithdrawn = weiToDecimal(reward.total_withdrawn || '0');
                 
                 return (
                   <div
