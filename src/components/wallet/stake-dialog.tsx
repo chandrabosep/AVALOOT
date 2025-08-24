@@ -1057,7 +1057,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
             
             <button
               onClick={handleClose}
-              className="w-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-500 text-gray-200 font-medium py-3 px-4 rounded-xl transition-colors"
+              className="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-800 disabled:text-gray-500 text-gray-200 font-medium py-3 px-4 rounded-xl transition-colors"
               disabled={transactionStatus === 'approving' || transactionStatus === 'staking'}
             >
               {transactionStatus === 'success' ? 'Close' : 'Cancel'}
