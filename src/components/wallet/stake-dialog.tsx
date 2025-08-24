@@ -2,7 +2,7 @@
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
-import { X, Plus, Coins, AlertCircle, ChevronDown, RefreshCw } from 'lucide-react';
+import { X, Plus, Coins, AlertCircle, ChevronDown, RefreshCw, TrendingUp } from 'lucide-react';
 import { createPublicClient, createWalletClient, custom, http, formatEther, parseEther, formatUnits, parseUnits } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
@@ -622,7 +622,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-black/90 border border-black/75 text-white max-w-md max-h-[90vh] overflow-hidden">
+      <DialogContent className="bg-black/90 border border-black/75 text-white max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-red-500/20 rounded-xl border border-red-400/40">
@@ -645,7 +645,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
         </DialogHeader>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-2">
           {wallets.length === 0 ? (
             <div className="text-center py-8">
               <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
@@ -834,16 +834,21 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
               </div>
 
               {/* Amount Input */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-white">Amount</label>
                   {selectedToken && (
-                    <button
-                      onClick={setMaxAmount}
-                      className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2"
-                    >
-                      Max: {selectedToken.balance}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">
+                        Balance: {parseFloat(selectedToken.balance).toFixed(4)}
+                      </span>
+                      <button
+                        onClick={setMaxAmount}
+                        className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 px-2 py-1 rounded-md transition-colors border border-red-500/30"
+                      >
+                        MAX
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="relative">
@@ -852,42 +857,58 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.0"
-                    className="w-full p-3 border border-black/75 rounded-xl bg-black/50 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className={`w-full p-3 border rounded-xl bg-black/50 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 transition-colors pr-20 ${
+                      amount && !isValidAmount()
+                        ? 'border-red-500/50 focus:ring-red-500/50 focus:border-red-500' 
+                        : 'border-gray-600 focus:ring-red-500 focus:border-red-500'
+                    }`}
                     disabled={loading || !selectedToken}
                     step="0.000001"
                     min="0"
                   />
                   {selectedToken && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <span className="text-sm text-gray-400">{selectedToken.symbol}</span>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                      <span className="text-sm text-gray-300 font-medium">{selectedToken.symbol}</span>
                     </div>
                   )}
                 </div>
                 {amount && !isValidAmount() && (
-                  <p className="text-xs text-red-400">
-                    {parseFloat(amount) > parseFloat(selectedToken?.balance || '0') 
-                      ? 'Insufficient balance' 
-                      : 'Please enter a valid amount'}
-                  </p>
+                  <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    <span>
+                      {parseFloat(amount) > parseFloat(selectedToken?.balance || '0') 
+                        ? `Insufficient balance. You have ${parseFloat(selectedToken?.balance || '0').toFixed(4)} ${selectedToken?.symbol}` 
+                        : 'Please enter a valid amount'}
+                    </span>
+                  </div>
+                )}
+                {selectedToken && amount && isValidAmount() && parseFloat(amount) > 0 && (
+                  <div className="text-xs text-gray-400 bg-gray-800/30 rounded-lg p-2 border border-gray-600/30">
+                    💡 Staking {amount} {selectedToken.symbol} • You'll earn 5% back when claimed
+                  </div>
                 )}
               </div>
 
               {/* Duration Selection */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <label className="text-sm font-medium text-white">Stake Duration</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['1', '24', '168'].map((hours) => (
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {[
+                    { value: '1', label: '1 Hour' },
+                    { value: '24', label: '1 Day' },
+                    { value: '168', label: '1 Week' }
+                  ].map((option) => (
                     <button
-                      key={hours}
-                      onClick={() => setDuration(hours)}
-                      className={`p-3 text-sm font-medium rounded-xl border transition-colors ${
-                        duration === hours
-                          ? 'bg-red-500 text-white border-red-500'
-                          : 'bg-black/50 text-gray-300 border-black/75 hover:bg-black/70'
+                      key={option.value}
+                      onClick={() => setDuration(option.value)}
+                      className={`p-2 text-sm font-medium rounded-md border transition-all duration-200 ${
+                        duration === option.value
+                          ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25'
+                          : 'bg-black/50 text-gray-300 border-gray-600 hover:bg-black/70 hover:border-gray-500'
                       }`}
                       disabled={loading}
                     >
-                      {hours === '1' ? '1 Hour' : hours === '24' ? '1 Day' : '1 Week'}
+                      <span>{option.label}</span>
                     </button>
                   ))}
                 </div>
@@ -896,21 +917,27 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
-                    className="flex-1 p-2 text-sm border border-black/75 rounded-lg bg-black/50 text-white focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                    placeholder="Custom hours"
+                    className="flex-1 p-2.5 text-sm border border-gray-600 rounded-lg bg-black/50 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                    placeholder="Custom hours (1-8760)"
                     min="1"
                     max="8760"
                     disabled={loading}
                   />
-                  <span className="text-xs text-gray-400">hours</span>
+                  <span className="text-sm text-gray-400 font-medium">hours</span>
                 </div>
+                {duration && (parseInt(duration) < 1 || parseInt(duration) > 8760) && (
+                  <div className="text-xs text-red-400 flex items-center gap-1 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    Duration must be between 1 hour and 1 year (8760 hours)
+                  </div>
+                )}
               </div>
             </>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-black/75 pt-6 space-y-3">
+        <div className="border-t border-black/75 space-y-3">
           {/* Success Message with Stake Info */}
           {transactionStatus === 'success' && (
             <div className="p-4 bg-green-900/30 border border-green-500/30 rounded-lg">
@@ -969,44 +996,73 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
             </div>
           )}
 
-          {wallets.length > 0 && currentLocation && (
-            <button
-              onClick={handleStake}
-              disabled={transactionStatus === 'approving' || transactionStatus === 'staking' || !selectedToken || !isValidAmount()}
-              className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 disabled:text-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              {transactionStatus === 'approving' ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  Approving Token...
-                </>
-              ) : transactionStatus === 'staking' ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  Staking...
-                </>
-              ) : transactionStatus === 'success' ? (
-                <>
-                  <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-white">✓</span>
+          {/* Reward Information */}
+          {wallets.length > 0 && currentLocation && selectedToken && amount && isValidAmount() && parseFloat(amount) > 0 && (
+            <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500/30 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-3 h-3 text-green-400" />
                   </div>
-                  Success!
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Stake {amount || '0'} {selectedToken?.symbol || 'Tokens'}
-                </>
-              )}
-            </button>
+                  <span className="text-sm font-medium text-green-400">Earn 5% Back</span>
+                </div>
+                <div className="text-xs text-green-300 font-mono bg-green-500/10 px-2 py-1 rounded-md">
+                  +{amount ? (parseFloat(amount) * 0.05).toFixed(4) : '0'} {selectedToken.symbol}
+                </div>
+              </div>
+              <div className="text-xs text-gray-300 leading-relaxed">
+                When someone claims your stake, they get 95% and you earn 5% back as passive income.
+              </div>
+            </div>
           )}
-          <button
-            onClick={handleClose}
-            className="w-full bg-red-500/50 hover:bg-red-500/50 disabled:bg-red-500/50 disabled:text-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-colors"
-            disabled={transactionStatus === 'approving' || transactionStatus === 'staking'}
-          >
-            Cancel
-          </button>
+
+          {/* Action Buttons */}
+          <div className="space-y-3 pt-4">
+            {wallets.length > 0 && currentLocation && (
+              <button
+                onClick={handleStake}
+                disabled={transactionStatus === 'approving' || transactionStatus === 'staking' || !selectedToken || !isValidAmount() || !amount || parseFloat(amount) <= 0}
+                className="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-3.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-red-500/25"
+              >
+                {transactionStatus === 'approving' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    <span>Approving Token...</span>
+                  </>
+                ) : transactionStatus === 'staking' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    <span>Creating Stake...</span>
+                  </>
+                ) : transactionStatus === 'success' ? (
+                  <>
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs text-white">✓</span>
+                    </div>
+                    <span>Stake Created!</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    <span>
+                      {!selectedToken ? 'Select Token' : 
+                       !amount || parseFloat(amount) <= 0 ? 'Enter Amount' :
+                       !isValidAmount() ? 'Insufficient Balance' :
+                       `Stake ${parseFloat(amount).toFixed(4)} ${selectedToken.symbol}`}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+            
+            <button
+              onClick={handleClose}
+              className="w-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-500 text-gray-200 font-medium py-3 px-4 rounded-xl transition-colors"
+              disabled={transactionStatus === 'approving' || transactionStatus === 'staking'}
+            >
+              {transactionStatus === 'success' ? 'Close' : 'Cancel'}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

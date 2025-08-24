@@ -1,6 +1,11 @@
 export const GeoStakeABI = [
 	{
 		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
 		"name": "ReentrancyGuardReentrantCall",
 		"type": "error"
 	},
@@ -31,9 +36,21 @@ export const GeoStakeABI = [
 				"type": "address"
 			},
 			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "staker",
+				"type": "address"
+			},
+			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "amount",
+				"name": "claimerAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "stakerReward",
 				"type": "uint256"
 			}
 		],
@@ -63,6 +80,31 @@ export const GeoStakeABI = [
 			}
 		],
 		"name": "Refunded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "staker",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardWithdrawn",
 		"type": "event"
 	},
 	{
@@ -115,6 +157,25 @@ export const GeoStakeABI = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "oldPercentage",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newPercentage",
+				"type": "uint256"
+			}
+		],
+		"name": "StakerRewardPercentageUpdated",
+		"type": "event"
+	},
+	{
 		"inputs": [],
 		"name": "MAX_COORDINATE",
 		"outputs": [
@@ -130,6 +191,19 @@ export const GeoStakeABI = [
 	{
 		"inputs": [],
 		"name": "MAX_DURATION",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "MAX_STAKER_REWARD",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -272,6 +346,30 @@ export const GeoStakeABI = [
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "staker",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "getStakerRewards",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "stakeId",
 				"type": "uint256"
@@ -308,6 +406,19 @@ export const GeoStakeABI = [
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -316,6 +427,19 @@ export const GeoStakeABI = [
 			}
 		],
 		"name": "refund",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newPercentage",
+				"type": "uint256"
+			}
+		],
+		"name": "setStakerRewardPercentage",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -356,6 +480,43 @@ export const GeoStakeABI = [
 	{
 		"inputs": [],
 		"name": "stakeCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "stakerRewardPercentage",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "stakerRewards",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -413,6 +574,32 @@ export const GeoStakeABI = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "withdrawRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

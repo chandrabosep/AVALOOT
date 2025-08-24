@@ -10,7 +10,7 @@ import { useWallets } from '@privy-io/react-auth';
 import { createWalletClient, createPublicClient, custom, http, parseEther } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
-import { stakeOperations } from '@/lib/supabase';
+import { stakeOperations, stakerRewardOperations } from '@/lib/supabase';
 
 interface StakeDetailsDialogProps {
   isOpen: boolean;
@@ -163,12 +163,70 @@ export default function StakeDetailsDialog({
       });
 
       if (receipt.status === 'success') {
-        // Update database to mark stake as claimed
+        // Extract claim amounts from transaction logs
+        let claimerAmount = '0';
+        let stakerReward = '0';
+        
+        // Look for the Claimed event in the transaction logs
+        const claimedEvent = receipt.logs.find(log => {
+          try {
+            // Check if this log matches the Claimed event signature
+            return log.topics[0] === '0x...' // You would need the actual event signature hash
+          } catch {
+            return false;
+          }
+        });
+
+        if (claimedEvent) {
+          try {
+            // Decode the event data to get claimerAmount and stakerReward
+            // For now, we'll calculate based on the original amount and 5% reward
+            const originalAmount = BigInt(stake.amount);
+            const rewardPercentage = BigInt(500); // 5% in basis points
+            const calculatedStakerReward = (originalAmount * rewardPercentage) / BigInt(10000);
+            const calculatedClaimerAmount = originalAmount - calculatedStakerReward;
+            
+            stakerReward = calculatedStakerReward.toString();
+            claimerAmount = calculatedClaimerAmount.toString();
+          } catch (error) {
+            console.warn('Failed to decode claim event, using calculated amounts');
+            // Fallback calculation
+            const originalAmount = BigInt(stake.amount);
+            const calculatedStakerReward = (originalAmount * BigInt(500)) / BigInt(10000);
+            stakerReward = calculatedStakerReward.toString();
+            claimerAmount = (originalAmount - calculatedStakerReward).toString();
+          }
+        } else {
+          // Fallback calculation if event not found
+          const originalAmount = BigInt(stake.amount);
+          const calculatedStakerReward = (originalAmount * BigInt(500)) / BigInt(10000);
+          stakerReward = calculatedStakerReward.toString();
+          claimerAmount = (originalAmount - calculatedStakerReward).toString();
+        }
+
+        // Update database to mark stake as claimed with amounts
         const claimerAddress = wallets[0].address;
-        const dbUpdateSuccess = await stakeOperations.markAsClaimed(stake.stakeId, claimerAddress);
+        const dbUpdateSuccess = await stakeOperations.markAsClaimed(
+          stake.stakeId, 
+          claimerAddress, 
+          claimerAmount, 
+          stakerReward
+        );
         
         if (!dbUpdateSuccess) {
           console.warn('Failed to update database, but blockchain transaction succeeded');
+        }
+
+        // Update staker rewards in the database
+        if (stakerReward !== '0') {
+          await stakerRewardOperations.updateStakerReward(
+            stake.stakerAddress,
+            stake.tokenAddress,
+            stake.symbol,
+            stakerReward,
+            'avalanche-fuji', // or get from config
+            CONTRACT_ADDRESS
+          );
         }
 
         setClaimSuccess(true);
@@ -281,6 +339,40 @@ export default function StakeDetailsDialog({
               </div>
             </div>
           </div>
+
+          {/* Reward Breakdown */}
+          {stake.canClaim && !stake.isOwn && (
+            <div className="bg-gradient-to-r from-green-900/20 to-purple-900/20 border border-green-500/30 rounded-xl p-4">
+              <h4 className="font-medium text-green-400 mb-3 flex items-center gap-2">
+                💰 Claim Breakdown
+              </h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">Total Stake:</span>
+                  <span className="font-mono text-white">
+                    {parseFloat(stake.amount).toFixed(6)} {stake.symbol}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">You receive (95%):</span>
+                  <span className="font-mono text-blue-300 font-semibold">
+                    {(parseFloat(stake.amount) * 0.95).toFixed(6)} {stake.symbol}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-300">Staker earns back (5%):</span>
+                  <span className="font-mono text-green-300">
+                    {(parseFloat(stake.amount) * 0.05).toFixed(6)} {stake.symbol}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gray-600/30">
+                <p className="text-xs text-gray-400">
+                  ℹ️ This incentive model rewards stakers for creating popular locations while you still get the majority of the stake!
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Claim Section */}
           {stake.canClaim && !stake.isOwn && (

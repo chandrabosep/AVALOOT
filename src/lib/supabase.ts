@@ -22,10 +22,26 @@ export interface StakeRecord {
   claimed: boolean
   claimed_by?: string
   claimed_at?: string
+  claimer_amount?: string
+  staker_reward?: string
   refunded: boolean
   refunded_at?: string
   network: string
   contract_address: string
+}
+
+export interface StakerRewardRecord {
+  id?: number
+  staker_address: string
+  token_address: string
+  token_symbol: string
+  total_earned: string
+  total_withdrawn: string
+  available_balance: string
+  network: string
+  contract_address: string
+  created_at: string
+  updated_at: string
 }
 
 export interface StakeInsert {
@@ -141,15 +157,22 @@ export const stakeOperations = {
     }
   },
 
-  // Update stake as claimed
-  async markAsClaimed(stakeId: number, claimerAddress: string): Promise<boolean> {
+  // Update stake as claimed with reward amounts
+  async markAsClaimed(
+    stakeId: number, 
+    claimerAddress: string, 
+    claimerAmount: string, 
+    stakerReward: string
+  ): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('stakes')
         .update({
           claimed: true,
           claimed_by: claimerAddress,
-          claimed_at: new Date().toISOString()
+          claimed_at: new Date().toISOString(),
+          claimer_amount: claimerAmount,
+          staker_reward: stakerReward
         })
         .eq('stake_id', stakeId)
 
@@ -206,6 +229,119 @@ export const stakeOperations = {
     } catch (error) {
       console.error('Error fetching stake by tx hash:', error)
       return null
+    }
+  }
+}
+
+// Staker rewards operations
+export const stakerRewardOperations = {
+  // Get staker rewards by address
+  async getStakerRewards(stakerAddress: string, network: string = 'avalanche-fuji'): Promise<StakerRewardRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('staker_rewards')
+        .select('*')
+        .eq('staker_address', stakerAddress)
+        .eq('network', network)
+        .order('updated_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching staker rewards:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Error fetching staker rewards:', error)
+      return []
+    }
+  },
+
+  // Update staker reward (called when a stake is claimed)
+  async updateStakerReward(
+    stakerAddress: string,
+    tokenAddress: string,
+    tokenSymbol: string,
+    rewardAmount: string,
+    network: string = 'avalanche-fuji',
+    contractAddress: string = ''
+  ): Promise<boolean> {
+    try {
+      const { error } = await supabase.rpc('update_staker_reward', {
+        p_staker_address: stakerAddress,
+        p_token_address: tokenAddress,
+        p_token_symbol: tokenSymbol,
+        p_reward_amount: rewardAmount,
+        p_network: network,
+        p_contract_address: contractAddress
+      })
+
+      if (error) {
+        console.error('Error updating staker reward:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error updating staker reward:', error)
+      return false
+    }
+  },
+
+  // Record reward withdrawal
+  async recordRewardWithdrawal(
+    stakerAddress: string,
+    tokenAddress: string,
+    withdrawalAmount: string,
+    network: string = 'avalanche-fuji',
+    contractAddress: string = ''
+  ): Promise<boolean> {
+    try {
+      const { error } = await supabase.rpc('record_reward_withdrawal', {
+        p_staker_address: stakerAddress,
+        p_token_address: tokenAddress,
+        p_withdrawal_amount: withdrawalAmount,
+        p_network: network,
+        p_contract_address: contractAddress
+      })
+
+      if (error) {
+        console.error('Error recording reward withdrawal:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error recording reward withdrawal:', error)
+      return false
+    }
+  },
+
+  // Get total rewards earned by a staker
+  async getTotalRewardsEarned(stakerAddress: string, network: string = 'avalanche-fuji'): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('staker_rewards')
+        .select('total_earned')
+        .eq('staker_address', stakerAddress)
+        .eq('network', network)
+
+      if (error) {
+        console.error('Error fetching total rewards:', error)
+        return '0'
+      }
+
+      if (!data || data.length === 0) return '0'
+
+      // Sum all total_earned amounts
+      const total = data.reduce((sum, record) => {
+        return sum + parseFloat(record.total_earned || '0')
+      }, 0)
+
+      return total.toString()
+    } catch (error) {
+      console.error('Error fetching total rewards:', error)
+      return '0'
     }
   }
 }

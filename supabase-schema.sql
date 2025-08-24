@@ -15,6 +15,8 @@ CREATE TABLE stakes (
   claimed BOOLEAN NOT NULL DEFAULT FALSE,
   claimed_by VARCHAR(42),
   claimed_at TIMESTAMPTZ,
+  claimer_amount VARCHAR(100), -- Amount received by claimer
+  staker_reward VARCHAR(100), -- Amount earned by staker as reward
   refunded BOOLEAN NOT NULL DEFAULT FALSE,
   refunded_at TIMESTAMPTZ,
   network VARCHAR(50) NOT NULL DEFAULT 'avalanche-fuji',
@@ -111,5 +113,99 @@ BEGIN
     active_stakes_view.latitude BETWEEN min_lat AND max_lat
     AND active_stakes_view.longitude BETWEEN min_lng AND max_lng
   ORDER BY created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create staker_rewards table to track accumulated rewards
+CREATE TABLE staker_rewards (
+  id BIGSERIAL PRIMARY KEY,
+  staker_address VARCHAR(42) NOT NULL,
+  token_address VARCHAR(42) NOT NULL,
+  token_symbol VARCHAR(20) NOT NULL,
+  total_earned VARCHAR(100) NOT NULL DEFAULT '0', -- Total rewards earned
+  total_withdrawn VARCHAR(100) NOT NULL DEFAULT '0', -- Total rewards withdrawn
+  available_balance VARCHAR(100) NOT NULL DEFAULT '0', -- Available to withdraw
+  network VARCHAR(50) NOT NULL DEFAULT 'avalanche-fuji',
+  contract_address VARCHAR(42) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Create indexes for staker_rewards
+CREATE INDEX idx_staker_rewards_address ON staker_rewards(staker_address);
+CREATE INDEX idx_staker_rewards_token ON staker_rewards(token_address);
+CREATE INDEX idx_staker_rewards_network_contract ON staker_rewards(network, contract_address);
+CREATE UNIQUE INDEX idx_staker_rewards_unique ON staker_rewards(staker_address, token_address, network, contract_address);
+
+-- Enable RLS for staker_rewards
+ALTER TABLE staker_rewards ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for staker_rewards
+CREATE POLICY "Users can read their own rewards" ON staker_rewards
+  FOR SELECT USING (true); -- Allow reading for analytics, but could be restricted to staker_address = auth.uid() if using auth
+
+CREATE POLICY "Anyone can insert rewards" ON staker_rewards
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update rewards" ON staker_rewards
+  FOR UPDATE USING (true);
+
+-- Function to update staker rewards
+CREATE OR REPLACE FUNCTION update_staker_reward(
+  p_staker_address VARCHAR(42),
+  p_token_address VARCHAR(42),
+  p_token_symbol VARCHAR(20),
+  p_reward_amount VARCHAR(100),
+  p_network VARCHAR(50) DEFAULT 'avalanche-fuji',
+  p_contract_address VARCHAR(42) DEFAULT ''
+)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO staker_rewards (
+    staker_address, 
+    token_address, 
+    token_symbol, 
+    total_earned, 
+    available_balance,
+    network,
+    contract_address
+  )
+  VALUES (
+    p_staker_address, 
+    p_token_address, 
+    p_token_symbol, 
+    p_reward_amount, 
+    p_reward_amount,
+    p_network,
+    p_contract_address
+  )
+  ON CONFLICT (staker_address, token_address, network, contract_address)
+  DO UPDATE SET
+    total_earned = (staker_rewards.total_earned::NUMERIC + p_reward_amount::NUMERIC)::VARCHAR,
+    available_balance = (staker_rewards.available_balance::NUMERIC + p_reward_amount::NUMERIC)::VARCHAR,
+    updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to record reward withdrawal
+CREATE OR REPLACE FUNCTION record_reward_withdrawal(
+  p_staker_address VARCHAR(42),
+  p_token_address VARCHAR(42),
+  p_withdrawal_amount VARCHAR(100),
+  p_network VARCHAR(50) DEFAULT 'avalanche-fuji',
+  p_contract_address VARCHAR(42) DEFAULT ''
+)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE staker_rewards 
+  SET 
+    total_withdrawn = (total_withdrawn::NUMERIC + p_withdrawal_amount::NUMERIC)::VARCHAR,
+    available_balance = (available_balance::NUMERIC - p_withdrawal_amount::NUMERIC)::VARCHAR,
+    updated_at = NOW()
+  WHERE 
+    staker_address = p_staker_address 
+    AND token_address = p_token_address
+    AND network = p_network
+    AND contract_address = p_contract_address;
 END;
 $$ LANGUAGE plpgsql;
