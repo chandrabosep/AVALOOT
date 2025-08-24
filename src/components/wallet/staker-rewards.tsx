@@ -300,7 +300,7 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      {/* <div className="text-right">
                         <div className="mb-2">
                           <span className="text-xs bg-gray-700/50 text-gray-300 px-2 py-1 rounded-full border border-gray-600/30">
                             Available: {availableBalance.toFixed(6)} {reward.token_symbol}
@@ -327,7 +327,7 @@ export default function StakerRewards({ className, onRefresh }: StakerRewardsPro
                             No rewards
                           </button>
                         )}
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="pt-3 border-t border-gray-600/30">
