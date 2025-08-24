@@ -71,11 +71,11 @@ export default function PlayableMap() {
       {activeView === 'map' ? (
         <MapComponent {...mapProps} />
       ) : (
-        <div className="min-h-screen bg-background p-4 pb-20">
+        <div className="min-h-screen bg-black/90 p-4 pb-20">
           <div className="max-w-6xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-foreground mb-2">Stakes</h1>
-              <p className="text-muted-foreground">View and manage your stakes</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Stakes</h1>
+              <p className="text-gray-400">View and manage your stakes</p>
             </div>
             <StakesList />
           </div>
@@ -83,35 +83,35 @@ export default function PlayableMap() {
       )}
       
       {/* Bottom Navigation */}
-      <div className='absolute bottom-0 left-0 w-full h-20 bg-black/30 backdrop-blur-xl border-t border-white/20 z-10 flex items-center justify-around px-4 shadow-2xl shadow-black/20'>
+      <div className='absolute bottom-0 left-0 w-full h-20 bg-black/90 backdrop-blur-lg border-t border-gray-700 z-10 flex items-center justify-around px-4 shadow-2xl shadow-black/40'>
         <div 
-          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl ${
+          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2.5 rounded-2xl ${
             activeView === 'map' 
-              ? 'text-red-500/80 bg-red-400/20 shadow-lg shadow-red-500/25 border border-red-500/50' 
-                : 'text-gray-200 hover:text-red-300 hover:bg-red-500/10'
+              ? 'text-red-400 bg-gradient-to-br from-red-500/30 to-red-600/20 border border-red-400/60 backdrop-blur-sm' 
+              : 'text-gray-300 hover:text-red-300 hover:bg-gradient-to-br hover:from-red-500/20 hover:to-red-600/10 hover:shadow-lg hover:shadow-red-500/30 hover:border hover:border-red-500/40'
           }`}
           onClick={() => setActiveView('map')}
         >
-          <MapPin className={`w-6 h-6 mb-1 ${activeView === 'map' ? 'drop-shadow-lg' : ''}`} />
+          <MapPin className={`w-6 h-6 mb-1 ${activeView === 'map' ? 'drop-shadow-lg filter drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]' : ''}`} />
         </div>
         <div 
-          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl text-gray-200 hover:text-red-300 hover:bg-red-500/10 hover:shadow-lg hover:shadow-red-500/20'
+          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2.5 rounded-2xl text-gray-300 hover:text-red-300 hover:bg-gradient-to-br hover:from-red-500/20 hover:to-red-600/10 hover:shadow-lg hover:shadow-red-500/30 hover:border hover:border-red-500/40'
           onClick={() => setIsStakeDialogOpen(true)}
         >
           <Plus className='w-6 h-6 mb-1' />
         </div>
         <div 
-          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl ${
+          className={`relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2.5 rounded-2xl ${
             activeView === 'stakes' 
-            ? 'text-red-500/80 bg-red-400/20 shadow-lg shadow-red-500/25 border border-red-500/50' 
-            : 'text-gray-200 hover:text-red-300 hover:bg-red-500/10'
+            ? 'text-red-400 bg-gradient-to-br from-red-500/30 to-red-600/20 border border-red-400/60 backdrop-blur-sm' 
+            : 'text-gray-300 hover:text-red-300 hover:bg-gradient-to-br hover:from-red-500/20 hover:to-red-600/10 hover:shadow-lg hover:shadow-red-500/30 hover:border hover:border-red-500/40'
           }`}
           onClick={() => setActiveView('stakes')}
         >
-          <List className={`w-6 h-6 mb-1 ${activeView === 'stakes' ? 'drop-shadow-lg' : ''}`} />
+          <List className={`w-6 h-6 mb-1 ${activeView === 'stakes' ? 'drop-shadow-lg filter drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]' : ''}`} />
         </div>
         <div 
-          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2 rounded-xl text-gray-200 hover:text-red-300 hover:bg-red-500/10 hover:shadow-lg hover:shadow-red-500/20'
+          className='relative flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300 p-2.5 rounded-2xl text-gray-300 hover:text-red-300 hover:bg-gradient-to-br hover:from-red-500/20 hover:to-red-600/10 hover:shadow-lg hover:shadow-red-500/30 hover:border hover:border-red-500/40'
           onClick={() => setIsFundsDialogOpen(true)}
         >
           <Wallet className='w-6 h-6 mb-1' />

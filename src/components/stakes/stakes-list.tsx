@@ -110,13 +110,13 @@ export default function StakesList() {
     <div className="space-y-4">
       {/* Tab Navigation */}
       <div className="flex items-center justify-between">
-        <div className="flex space-x-1 bg-muted rounded-lg p-1">
+        <div className="flex space-x-1 bg-black/50 rounded-lg p-1 border border-gray-700">
           <button
             onClick={() => setActiveTab('my-stakes')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'my-stakes'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-red-500/20 text-red-400 border border-red-400/60 shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
             My Stakes
@@ -125,8 +125,8 @@ export default function StakesList() {
             onClick={() => setActiveTab('all-stakes')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'all-stakes'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-red-500/20 text-red-400 border border-red-400/60 shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
             All Stakes
@@ -136,7 +136,7 @@ export default function StakesList() {
         <button
           onClick={refreshStakes}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -145,21 +145,21 @@ export default function StakesList() {
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && stakes.length === 0 && !error && (
         <div className="text-center py-8">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <Coins className="w-8 h-8 text-muted-foreground" />
+          <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
+            <Coins className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
+          <h3 className="text-lg font-medium text-white mb-2">
             {activeTab === 'my-stakes' ? 'No Stakes Yet' : 'No Active Stakes'}
           </h3>
-          <p className="text-muted-foreground">
+          <p className="text-gray-400">
             {activeTab === 'my-stakes'
               ? 'Create your first stake to get started!'
               : 'No active stakes available to claim right now.'}
@@ -178,35 +178,40 @@ export default function StakesList() {
             return (
               <div
                 key={stake.id}
-                className="border border-border rounded-xl p-4 bg-card hover:shadow-md transition-shadow"
+                className="border border-gray-700 rounded-xl p-4 bg-black/50 hover:bg-black/60 transition-all duration-300 hover:shadow-md hover:shadow-red-500/20 hover:border-red-500/40"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-sm font-medium text-white">
                       Stake #{stake.stake_id}
                     </span>
                     {isOwner && (
-                      <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                      <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
                         Mine
                       </span>
                     )}
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${bgColor} ${color}`}>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    status === 'Claimed' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
+                    status === 'Refunded' ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' :
+                    status === 'Expired' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    'bg-green-500/20 text-green-400 border border-green-500/30'
+                  }`}>
                     {status}
                   </span>
                 </div>
 
                 {/* Amount & Token */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <Coins className="w-4 h-4 text-primary" />
+                  <div className="p-1.5 bg-red-500/20 rounded-lg border border-red-400/40">
+                    <Coins className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-white">
                       {stake.amount} {stake.token_symbol}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-400">
                       {stake.duration_hours}h duration
                     </p>
                   </div>
@@ -214,11 +219,11 @@ export default function StakesList() {
 
                 {/* Location */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <MapPin className="w-4 h-4 text-primary" />
+                  <div className="p-1.5 bg-red-500/20 rounded-lg border border-red-400/40">
+                    <MapPin className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-400">
                       {stake.latitude.toFixed(4)}, {stake.longitude.toFixed(4)}
                     </p>
                   </div>
@@ -226,14 +231,14 @@ export default function StakesList() {
 
                 {/* Time Info */}
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="p-1.5 bg-primary/10 rounded-lg">
-                    <Clock className="w-4 h-4 text-primary" />
+                  <div className="p-1.5 bg-red-500/20 rounded-lg border border-red-400/40">
+                    <Clock className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-foreground font-medium">
+                    <p className="text-xs text-white font-medium">
                       {timeRemaining === 'EXPIRED' ? 'Expired' : `${timeRemaining} left`}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-gray-400">
                       Expires: {new Date(stake.expires_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -245,20 +250,20 @@ export default function StakesList() {
                     href={`https://testnet.snowtrace.io/tx/${stake.transaction_hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs bg-muted hover:bg-muted/80 text-muted-foreground rounded-lg transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white rounded-lg transition-colors border border-gray-700"
                   >
                     <ExternalLink className="w-3 h-3" />
                     View Tx
                   </a>
                   
                   {status === 'Active' && !isOwner && (
-                    <button className="flex-1 px-3 py-2 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    <button className="flex-1 px-3 py-2 text-xs bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-lg transition-all duration-300 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40">
                       Claim
                     </button>
                   )}
                   
                   {status === 'Expired' && isOwner && !stake.claimed && (
-                    <button className="flex-1 px-3 py-2 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors">
+                    <button className="flex-1 px-3 py-2 text-xs bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white rounded-lg transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40">
                       Refund
                     </button>
                   )}
