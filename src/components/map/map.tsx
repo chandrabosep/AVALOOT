@@ -62,35 +62,21 @@ export default function MapComponent({
         anchor: "center",
       });
 
-      tokens?.forEach((token) => {
+      // Create token markers with click handlers
+      tokens.forEach((token) => {
         const tokenElement = createTokenMarker(token);
         if (onUserClick) {
           tokenElement.addEventListener("click", () => onUserClick(token));
         }
 
-        tokenMarkers.current.push(new mapboxgl.Marker({
-          element: tokenElement,
-          anchor: "center",
-        }));
-      });
-
-      tokens.forEach((token) => {
         const marker = new mapboxgl.Marker({
-          element: createTokenMarker(token),
+          element: tokenElement,
           anchor: "center",
         })
           .setLngLat([token.longitude, token.latitude])
           .addTo(mapRef.current!);
 
         tokenMarkers.current.push(marker);
-      });
-
-      // Create user markers with click handlers
-      tokens.forEach((token) => {
-        const userElement = createUserMarker(token);
-        if (onUserClick) {
-          userElement.addEventListener("click", () => onUserClick(token));
-        }
       });
       
 
