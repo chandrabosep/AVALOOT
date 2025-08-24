@@ -7,10 +7,11 @@ import { MapPin, Clock, User, Coins, ExternalLink, Loader2 } from 'lucide-react'
 import { StakeMarker } from '@/hooks/useStakes';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallets } from '@privy-io/react-auth';
-import { createWalletClient, createPublicClient, custom, http, parseEther } from 'viem';
+import { createWalletClient, createPublicClient, custom, http, parseEther, parseUnits } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
 import { stakeOperations, stakerRewardOperations } from '@/lib/supabase';
+import { safeAmountToBigInt } from '@/utlis/gas-utils';
 
 interface StakeDetailsDialogProps {
   isOpen: boolean;
@@ -191,7 +192,8 @@ export default function StakeDetailsDialog({
           try {
             // Decode the event data to get claimerAmount and stakerReward
             // For now, we'll calculate based on the original amount and 5% reward
-            const originalAmount = BigInt(stake.amount);
+            // Convert decimal string to wei (BigInt) safely
+            const originalAmount = safeAmountToBigInt(stake.amount);
             const rewardPercentage = BigInt(500); // 5% in basis points
             const calculatedStakerReward = (originalAmount * rewardPercentage) / BigInt(10000);
             const calculatedClaimerAmount = originalAmount - calculatedStakerReward;
@@ -201,14 +203,16 @@ export default function StakeDetailsDialog({
           } catch (error) {
             console.warn('Failed to decode claim event, using calculated amounts');
             // Fallback calculation
-            const originalAmount = BigInt(stake.amount);
+            // Convert decimal string to wei (BigInt) safely
+            const originalAmount = safeAmountToBigInt(stake.amount);
             const calculatedStakerReward = (originalAmount * BigInt(500)) / BigInt(10000);
             stakerReward = calculatedStakerReward.toString();
             claimerAmount = (originalAmount - calculatedStakerReward).toString();
           }
         } else {
           // Fallback calculation if event not found
-          const originalAmount = BigInt(stake.amount);
+          // Convert decimal string to wei (BigInt) safely
+          const originalAmount = safeAmountToBigInt(stake.amount);
           const calculatedStakerReward = (originalAmount * BigInt(500)) / BigInt(10000);
           stakerReward = calculatedStakerReward.toString();
           claimerAmount = (originalAmount - calculatedStakerReward).toString();

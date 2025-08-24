@@ -1,4 +1,4 @@
-import { PublicClient } from 'viem';
+import { PublicClient, parseUnits } from 'viem';
 
 /**
  * Estimates gas for a contract function call with fallback
@@ -28,6 +28,62 @@ export async function estimateGasWithFallback(
     console.warn('Gas estimation failed, using fallback:', error);
     return fallbackGas;
   }
+}
+
+/**
+ * Safely converts a decimal string amount to BigInt wei
+ * @param amount - The amount as a decimal string (e.g., "0.01")
+ * @param decimals - The number of decimals (default: 18 for ETH/AVAX)
+ * @returns BigInt representation in wei
+ */
+export function safeAmountToBigInt(amount: string, decimals: number = 18): bigint {
+  try {
+    return parseUnits(amount, decimals);
+  } catch (error) {
+    console.error('Failed to convert amount to BigInt:', amount, error);
+    throw new Error(`Invalid amount format: ${amount}`);
+  }
+}
+
+/**
+ * Formats a balance string for consistent display across the app
+ * @param balance - The balance as a decimal string
+ * @param maxDecimals - Maximum number of decimal places to show (default: 6)
+ * @returns Formatted balance string
+ */
+export function formatBalance(balance: string, maxDecimals: number = 6): string {
+  const num = parseFloat(balance);
+  
+  if (num === 0) return '0';
+  
+  // For very small amounts, use exponential notation
+  if (num < 0.000001) {
+    return num.toExponential(2);
+  }
+  
+  // For small amounts, show more precision
+  if (num < 0.001) {
+    return num.toFixed(6);
+  }
+  
+  // For normal amounts, show reasonable precision
+  if (num < 1) {
+    return num.toFixed(4);
+  }
+  
+  // For larger amounts, show fewer decimals
+  return num.toFixed(Math.min(maxDecimals, 4));
+}
+
+/**
+ * Formats a balance for display with symbol
+ * @param balance - The balance as a decimal string
+ * @param symbol - The token symbol
+ * @param maxDecimals - Maximum number of decimal places to show
+ * @returns Formatted balance with symbol
+ */
+export function formatBalanceWithSymbol(balance: string, symbol: string, maxDecimals: number = 6): string {
+  return `${formatBalance(balance, maxDecimals)} ${symbol}`;
 }
 
 /**

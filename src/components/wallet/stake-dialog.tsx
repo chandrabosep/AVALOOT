@@ -7,6 +7,7 @@ import { createPublicClient, createWalletClient, custom, http, formatEther, pars
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
 import { stakeOperations, type StakeInsert } from '@/lib/supabase';
+import { formatBalance, formatBalanceWithSymbol } from '@/utlis/gas-utils';
 import {
   Dialog,
   DialogContent,
@@ -773,12 +774,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-medium text-white">{selectedToken.symbol}</span>
                           <span className="text-xs text-gray-400">
-                            Balance: {parseFloat(selectedToken.balance) > 0.001 
-                              ? parseFloat(selectedToken.balance).toFixed(4)
-                              : parseFloat(selectedToken.balance) === 0 
-                                ? '0'
-                                : parseFloat(selectedToken.balance).toExponential(2)
-                            }
+                            Balance: {formatBalance(selectedToken.balance)}
                           </span>
                         </div>
                       </div>
@@ -832,10 +828,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                                 </span>
                                 {hasBalance && (
                                   <span className="text-xs text-green-400 font-medium">
-                                    {parseFloat(token.balance) > 0.001 
-                                      ? parseFloat(token.balance).toFixed(4)
-                                      : parseFloat(token.balance).toExponential(2)
-                                    }
+                                    {formatBalance(token.balance)}
                                   </span>
                                 )}
                               </div>
@@ -908,7 +901,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                   {selectedToken && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-400">
-                        Balance: {parseFloat(selectedToken.balance).toFixed(4)}
+                        Balance: {formatBalance(selectedToken.balance)}
                       </span>
                       <button
                         onClick={setMaxAmount}
@@ -945,7 +938,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                     <AlertCircle className="w-3 h-3 flex-shrink-0" />
                     <span>
                       {parseFloat(amount) > parseFloat(selectedToken?.balance || '0') 
-                        ? `Insufficient balance. You have ${parseFloat(selectedToken?.balance || '0').toFixed(4)} ${selectedToken?.symbol}` 
+                        ? `Insufficient balance. You have ${formatBalanceWithSymbol(selectedToken?.balance || '0', selectedToken?.symbol || '')}` 
                         : 'Please enter a valid amount'}
                     </span>
                   </div>
@@ -1075,7 +1068,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                   <span className="text-sm font-medium text-green-400">Earn 5% Back</span>
                 </div>
                 <div className="text-xs text-green-300 font-mono bg-green-500/10 px-2 py-1 rounded-md">
-                  +{amount ? (parseFloat(amount) * 0.05).toFixed(4) : '0'} {selectedToken.symbol}
+                  +{amount ? formatBalance((parseFloat(amount) * 0.05).toString()) : '0'} {selectedToken.symbol}
                 </div>
               </div>
               <div className="text-xs text-gray-300 leading-relaxed">
@@ -1116,7 +1109,7 @@ export default function StakeDialog({ isOpen, onClose, onStakeSuccess }: StakeDi
                       {!selectedToken ? 'Select Token' : 
                        !amount || parseFloat(amount) <= 0 ? 'Enter Amount' :
                        !isValidAmount() ? 'Insufficient Balance' :
-                       `Stake ${parseFloat(amount).toFixed(4)} ${selectedToken.symbol}`}
+                       `Stake ${formatBalance(amount)} ${selectedToken.symbol}`}
                     </span>
                   </>
                 )}

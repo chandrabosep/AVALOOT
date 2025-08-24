@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPublicClient, http } from 'viem';
 import { avalanche } from '@/utlis/network-config';
 import { GeoStakeABI } from '@/contracts/abi';
+import { formatBalance } from '@/utlis/gas-utils';
 import { Clock, MapPin, Coins, User, AlertCircle } from 'lucide-react';
 
 interface StakeInfoProps {
@@ -85,7 +86,7 @@ export default function StakeInfo({ stakeId, contractAddress }: StakeInfoProps) 
   const formatAmount = (amount: bigint): string => {
     // Assuming 18 decimals
     const formatted = Number(amount) / 1e18;
-    return formatted.toFixed(4);
+    return formatBalance(formatted.toString());
   };
 
   const formatDate = (timestamp: bigint): string => {

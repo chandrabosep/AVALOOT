@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { X, Copy, ExternalLink, Wallet, AlertCircle } from 'lucide-react';
 import { createPublicClient, http, formatEther } from 'viem';
 import { avalanche } from '@/utlis/network-config';
+import { formatBalance } from '@/utlis/gas-utils';
 import {
   Dialog,
   DialogContent,
@@ -243,7 +244,7 @@ export default function FundsDialog({ isOpen, onClose }: FundsDialogProps) {
                       ) : (
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-semibold text-white">
-                            {balances[wallet.address] || '0.0'} AVAX
+                            {formatBalance(balances[wallet.address] || '0.0')} AVAX
                           </span>
                           <button
                             onClick={() => !loading && fetchAllBalances()}
